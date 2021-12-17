@@ -1,0 +1,162 @@
+						PLAYLIST REACT + TYPESCRIPT FERNANDO HERRERA 
+
+Source: https://www.youtube.com/watch?v=dNxaP_BTtwQ&list=PLCKuOXG0bPi26-eawizqyLOgM7j66H_4M
+
+Usar TypesScript en vez de React me va a ayudar con el uso correcto de mis componentes,va a ser más fácil de leer el código escrito por otras personas ya que todo va a tener un tipado estricto,lo cual tiene muchas ventajas.
+
+Empiezo creando un proyecto con sintaxis npx create-react-app <nombre> --template typescript.Recuerda que no puedo usar CamelCase.Si da problemas usar npx create-react-app@latest.
+Puedo usar --template clean-cra para un proyecto más limpio
+
+NOTA: fijate como debo usar el atributo class y no className en el index.html exterior a la app de React,ya que estoy fuera de React(body class="container bg-dark text-white").Lógicamente,si usara className alli no lo entendiría el browser.
+
+					VIDEO 02 HOOK USE STATE WITH TYPESCRIPT
+
+ Puedo ver que al usar TypeScript en cuanto vaya a usar un argumento en cualquier función dentro de mi código se me va a pedir que especifique el tipo de cada argumento,indendientemente de si estoy en un hook o no.Genial.
+
+ const incrementar = (number:number = 0) => {
+    setCounter( counter + number );
+  };
+No podré dejarlo sin tipar,como en JS.
+
+Hagamos algo un poco más complejo.Fijate que React en un useState vacío por defecto siempre asigna el valor de undefined:
+
+const [ user, setUser ] = useState() <- user(que es el getter) es de tipo undefined.
+Asi que no voy a poder hacer esto:
+
+const login = () => {
+  setUser({
+    uid:'fdsf',
+    name:'Fernando'
+  })
+
+Porqué? Porque no podré asignar un object de tipo {uid:string;name:strind} a un undefined,ya que son tipos diferentes.Aqui veo como TS me vuelve a ayudar.El error en concreto es éste:
+Argument of type '{ uid: string; username: string; }' is not assignable to parameter of type 'SetStateAction<undefined>'. <- estaba claro,asin -_-
+
+* IMPORTANTE: fijate que useState<undefined> realmente era de tipo genérico,es decir,me va a aceptar un genérico!.Esto es la clave de todo
+
+Lógicamente,aqui es dónde tendré que crear una clase o una interfaz.Dado que no necesito una clase para simplemente tipar,mejor usar una interfaz que compila a 0 bytes.Obviamente el lugar donde usarla está bien claro:
+
+interface User {
+  uid: number;
+  name: string;
+}
+
+const [ user,setUser ] = useState<User>();
+
+NOTA:perfectamente puedo usar un valor por defecto a ese User en el hook,claro que hay que satisfacer la interfaz,como siempre
+
+ const [user, setUser] = useState<User>({
+    uid: "",
+    name: ""
+  });
+Fijate que en TS puedo castear con 'as <Type>'.Ejemplo {} as User.Puedo ver que Typescript es muy útil para detección de errores,etc...Debería tratar de usarlo siempre.
+
+			VIDEO 03 HOOKS USE EFFECT + USE REF WITH TYPESCRIPT
+
+En este ejercicio vamos a crear un simple Contador.En un efecto meto la función setInterval:
+
+useEffect( () => {
+    const interval = setInterval(() => {
+      setSegundos(segundos + 1)
+    }
+    , 789)
+    return () => {
+      clearInterval(interval)
+    }
+  }, [segundos])
+
+Puede parecer que está correcto,pero realmente está creando un montón de Listeners,pues ha pedido 'segundos' como dependencia,y si que cambia.
+
+Una solución es meter un callback dentro del setter del useState:
+setSegundos( s => s +1)
+NOTA: cuando uso una callback el primer valor que emite ese setter es el previos state,y no me pide la dependencia.Fijate que esto es básico para evitar la dependencia 'segundos'.Definitivamente es una mejora
+
+NOTA: puedo ver que a la hora de mandar props no puedo mandarlas sin tiparlas en el componente hijo que las reciba previamente.Esto cambia de JS,donde no necesito hacerlo:
+  useEffect( () => {
+    const interval = setInterval(() => 
+      setSegundos(s => s + 1)
+    , 1000)
+    return () => {
+      clearInterval(interval)
+    }
+  }, [])
+* Ya no me pide una dependencia tan dinámica.Definitivamente es una mejora increíble.
+
+					PASAR PROPS EN TS+REACT
+
+Puedo ver que si intento parsar una prop a un hijo simplemente TS me dará un error
+  <TimerHijo milisegundos={milisegundos}/> <- por sí solo es un error:
+
+* Tengo que darle una type annotation en el hijo
+ const TimerHijo = (args:any) => {...}
+
+Esto quita el error,sin embargo no se debe usar any,pues,¿como śe que puede acceder a args.milisegundos?.Ts no lo sabe.La solución es usar un type en ese file:
+
+type TimerHijoArgs = {
+  milisegundos:number
+}
+
+la keyword type se usa para definir un tipo que sólo voy a usar en ese archivo.Usualmente se pone arriba del componente,aunque también puede ir abajo.
+Fijate que se define como un object literal.Puedo usar cuantos quiera.Lógicamente,args ya no será de tipo any:
+
+export const TimerHijo = ( args: TimerHijoArgs ) => ... 
+
+Genial.Además fijate que puedo agregar incluso propiedades opcionales,y no mandarlas como props desde el padre:
+
+type TimerHijoArgs = {
+  milisegundos: number;
+  segundos?:number;
+}
+Si la pusiera obligatoria tengo que mandarla!.Y con todo esto ya puedo desestructurar las props que recibe un componente en TS.Fijate que antes de usar type no puedo desestructurar en TYPESCRIPT!:
+
+const Timer = ( { milisegundos}:TimerHijoArgs ) => ...
+
+En cuanto al interval,si hago hover sobre él veré que retorna un NodeJs.Timeout,y esto tengo visión sobre él en React.Para mantener la referencia al setInterval vamos a usar un useRef:
+
+const intervalRef = useRef();
+
+El useRef crea una referencia que no importa cuantas veces se reconstruya el componente,siempre va a ser el mismo puntero en memoria.Fijate que por defecto en TS useRef: React.MutableRefObject<undefined> no sabe que valor va a mantener esa referencia asi que lo pone de undefined.
+
+Es decir sólo puedo asignar un undefined:
+intervalRef.current = undefined;
+Pero yo quiero asignarle ese interval:
+const intervalRef = useRef<NodeJs.Timeout>();
+
+useEffect( () => {
+  intervalRef.current = setInterval( () => setSegundos(s => s +1));
+  return () => clearInterval(intervalRef.current)
+},[])
+
+Es decir que el useRef necesitará saber el type de lo que almacenará.Genial.Fijate como puedo declarar cualquier constante como una referencia y asignarla con xxxx.current a una función,arreglo,etc... 
+
+Esto también nos llevará a que el clearInterval necesita una función por argumento y nuestra ref puede ser o la función o undefined(pues puede que no la haya asignado aún,claro):
+
+const intervalRef: React.MutableRefObject<NodeJS.Timeout | undefined> 
+
+Hay varias formas de arreglar esto,una muy buena es usar un if con el operador '&&':
+   return () => {
+      intervalRef.current && clearInterval(intervalRef.current)
+    }
+Si existe el intervalRef.current lo limpia.
+Otra forma era usar el operador not nullish(!)
+  
+  useEffect( () => {
+ 
+    intervalRef.current = setInterval( () => 
+      setSegundos(s => s + 1),milisegundos)
+ 
+    return () => {
+      intervalRef.current && clearInterval(intervalRef.current)
+    }
+
+  }, [milisegundos])
+
+Perfecto.Lo interesante de este ejercicio ha sido entender que hay que usar un type para las props que recibe un componente en TS y que useRef<> usará un tipo genérico,igual que el useState<>.Supongo que todos los hooks lo harán.
+Además,recuerda que usar setters con callbacks en un efecto elimina el getter de ese useState como dependencia.
+Y puedo declarar cualquier referencia y asignarla con current a cualquier cosa como una función o un arreglo.Esa referencia al puntero nunca cambiará(crea un Singleton)
+
+			VIDEO 04 HOOK USE REDUCER WITH TS+REACT
+
+
+
+
