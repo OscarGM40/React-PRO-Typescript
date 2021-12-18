@@ -17,7 +17,7 @@ const TimerHijo = ( { milisegundos}:TimerHijoArgs ) => {
   useMemo( () => console.log(milisegundos), [milisegundos])
   
   useEffect( () => {
-    // console.log('useEffect')
+    console.log('useEffect')
  
     intervalRef.current = setInterval( () => 
       setSegundos(s => s + 1),milisegundos)

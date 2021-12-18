@@ -107,5 +107,64 @@ function App() {
 Recuerda que ahora es obligatorio,y no opcional,devolver el componente como una tag.Bien,pero como podemos navegar entre rutas?El usuario va a necesitar una forma de navegar entre rutas..
 La forma de solucionar esto es colocar una navegación interna en nuestra aplicación.
 
-COMPONENTE NAVLINK Minuto 21
+COMPONENTE NAVLINK 
+Fijate que cambiar de ruta a través de la URL hace que el navegador pida el archivo al server.Esto hay que evitarlo usando la navegación interna simulada del framework.
+* Recuerda que <a href="/about">About</a> hace un refresh en React.
+Para que no haga el refresh hay que usar el componente NavLink.Este componente ya venía en la versión 5,pero ahora tiene un cambio importante(en lugar de usar el atributo href usa 'to,pero esto ya era asi,no?)
+ <NavLink to="/about"> about </NavLink>
+
+Y para estilizar la ruta activa ya no se usa la propiedad activeClassName sino que React-Router-Dom me va a devolver la propiedad boleana isActive en los estilos,asi que puedo estilizar condicionalmente.
+En realidad me devuelve un objeto:
+<NavLink to="/" className={ (data) => console.log(data)}
+
+* Son tres navegaciones(al home y a otros dos diferentes)
+{isActive: true}
+{isActive: false}
+{isActive: false}
+Asi que habrá que desestructurar esa propiedad simplemente y estilizar en base a esa condición:
+
+ <li>
+          <NavLink to="/about">About</NavLink>
+        </li>
+        <li>
+          <NavLink to="/users">Users</NavLink>
+        </li>
+        <li>
+          <NavLink
+            className={({ isActive }) => (isActive ? "active" : "")}
+            to="/">
+            Home
+          </NavLink>
+        </li>
+
+* NOTA: parece que con uno sólo ya estilizó todos!.
+Por último NavLink no es la única forma de navegar,también está Link.
+
+LINK
+El próposito de Link es el mismo que el de NavLink,pero no está creado para estilizarlo condicionalmente.Es exactamente igual que NavLink pero sin esa capacidad:
+   <Link to="/users">Users</Link>
+
+IMPORTANTE: Tanto NavLink como Link pueden redireccionar dinámicamente.No tienen porqué ser rutas de mi app tampoco.Para ello puedo usar una expresión JSX:
+
+<Link to={`/users/${userId}	`}> 
+Siempre debo usar la ventaja de poder interpretar código.Profundizemos más en estos params.
+
+PARAMS(minuto 36)
+Los parámetros son algo básico en una aplicación.Para declarar una ruta con un parámetro dinámico no ha cambiado se usa :param.Ejemplo:
+
+  <Route path="/users/:id" element={<UserPage />} />
+
+Para acceder a los params puedo ejecutar el hook useParams,esto no ha cambiado.Recuerda que como tiene que ver con el routing viene de ellos,de react-router-dom.
+
+import { useParams } from 'react-router-dom';
+
+const params = useParams();
+
+En params tendré un objeto con los params obligatorios que me haya inventando y lleguen a esta ruta,en este caso sólo llegará un llamado 'id'.
+Normalmente este parámetro se usa para realizar peticiones iniciales a un backend.Veamos ahora como redireccionar automáticamente sin ayuda del usuario.
+
+NAVIGATE
+En versiones anteriores existia Redirect,que se usaba para redireccionar.Desde esta versión ya no existe y se usa Navigate,que es un componente muy similar.
+Minuto 43
+
 

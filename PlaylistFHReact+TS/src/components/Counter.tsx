@@ -10,7 +10,8 @@ const Counter = () => {
 
   return (
     <div className="mt-5">
-      <h2>Hook useState in TypeScript</h2>
+      <h2>1 - Hook useState in TypeScript</h2>
+      <hr />
       <h3>Counter</h3>
       <span>Valor: { counter }</span>
       <br />
