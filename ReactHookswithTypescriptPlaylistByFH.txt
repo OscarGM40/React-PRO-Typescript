@@ -223,3 +223,143 @@ return(
 
 				VIDEO 05 CUSTOM HOOKS CON TYPESCRIPT EN REACT
 
+NOTA:puedo agregar al stage de git de varias formas:
+git add "*.png" <- agrego todos los png de todo el proyecto
+git add *.png <- agrego por extensión en el directorio actual
+git add css/ <- agrego una carpeta
+git add -A <- agrego todo
+git add index.html styles.css <- agrego listando archivos
+git add css/*.scss <- agrego dentro de la carpeta css sólo los .scss
+git reset *.png <- recupero del stage esos archivos
+
+git log --oneline <- muestra el hash corto en una linea.Básico
+git log --oneline --decorate --all --graph <- aun más completo
+git status -s -b muestra la rama en la que estoy y además el stage
+
+NOTA: cuando se usa -- es porque viene una palabra,cuando se usa un único dash es porque viene sólo una letra y además las puedo agrupar.Es decir que puedo usar git status -s -b o bien git status -sb.
+
+Claro que escribir y memorizar tantas flags es muy tedioso.
+Es mejor crear un alias:
+
+git config --global alias.lg "log --oneline --decorate --all --graph"
+La sintaxis es git config --global alias.<name> "comando"
+Crear alias es algo básico.Recuerda que puedo listar y editar esta configuración:
+git config --global -e <- para editar
+git config --global -l <- para listar
+
+Volviendo al video,veamos un pequeño ejemplo de como gestionar un formulario sin usar un custom hook y despues usandolo,y viendo porqué hay que usarlo y cómo es mejor usarlo.
+NOTA: recuerda que en Js si estoy tomando un argumento y se lo estoy mandando a una funcion que está interna no hace falta mandarlo explicitamente:
+
+Esta forma:
+  onChange={ (ev) => handleChange(ev) } 
+y esta otra son lo mismo
+  onChange={handleChange}
+el argumento que emite el onChange es el que recibirá handleChange.Genial.Acuerdate,asinto.
+
+Bien vayamos al problema.Recuerda que React usa eventos sintéticos,que son como una copia de los eventos de Javascript.Pero esto da igual,TypeScript no va a reconocer un SyntheticEvent como tipo
+
+const handleChange = (event <- de qué tipo es?Necesito saberlo!)
+Podría hacer esto,pero estoy usando any..
+ const handleChange = (event:any ) => {
+    setFormulario({
+      ...formulario,
+      [event.target.name]: event.target.value
+    })
+  }
+Bien,realmente ya tenemos la respuesta,pues estamos en un evento sintético onChange,que lógicamente en Javascript es un ChangeEvent.Asi que pudiera parecer que esto lo arreglará todo:
+const handleChange = (event:ChangeEvent) 
+
+Pero no,porqué?.Porque los eventos son de tipo genérico.Era ChangeEvent<T>.Esto es asi porque puede ser un <select>,puede ser un <input> puede ser un <textarea> ...
+Yo tengo dos inputs,que son de clase HTMLInputElement.En cuanto especifique bien todo tendré el tipado correcto
+const handleChange = (event:ChangeEvent<HTMLInputElement>) => {
+  setFormulario({
+    ...formulario,
+   [event.target.name]:event.target.value
+
+Y lógicamente puedo desestructurar ese event,viendo un código mucho más elegante
+const handleChange = ( {target}: ChangeEvent<HTMLInputElement> ) => {
+  const { name, value } = target;
+  setFormulario({
+    ...formulario,
+    [ name ]:value
+  )};
+
+Ahora bien,¿qué pasa con el estado inicial del formulario?:
+
+const [ formulario, setFormulario ] = useState({
+    nombre: "",
+    email: "",
+  })
+Sería mejor no poner los campos en duro ahi,y hacer algo reusable para cualquier formulario.Recuerda que un customHook no es más que una función que devuelve lo que yo quiera y que puede usar estados,redux,otros hooks,.. en su interior.
+Lo importante es que devuelva lo que yo necesito.
+Además que puede recibir argumentos.Perfecto.
+
+YA cambiaremos ese tipo any del initialState
+export const useForm = ( initialState: any) => {
+
+  const [ formulario, setFormulario ] = useState(initialState);
+
+  const handleChange = ({ target }: ChangeEvent<HTMLInputElement> ) => {
+    const { name, value } = target;
+
+    setFormulario({
+      ...formulario,
+      [name]: value
+    })
+  }
+
+    return {
+      formulario,
+      handleChange
+    };
+}
+
+No tipar el initialState es un problema.No voy a saber qué propiedades puedo usar ,podría establecer cualquiera con ese any:
+value={formulario.nevera} <- no dará fallo
+
+Bien,es hora de resolver esto.Realmente ya lo he visto en el useState<T> del segundo video y es que mi customHook debo tiparlo con una interfaz(podría usar typeof o un type):
+
+interface FormData {
+  nombre:string;
+  email:string;
+  edad: number;
+}
+const { formulario,handleChange } = useForm<FormData>({
+  ... <- aqui ya veré todo y veré el error de la propiedad extra,claro.
+
+Sin embargo,ahora tengo el problema de que en el hook no lo he tipado.Con una función normal es bastante sencillo:
+
+export funcion useForm<T> (initialState:T){...} 
+
+pero no queremos dejar de usar nuestras arrow functions.El problema es que con ellas T necesita heredar de algo en particular:
+
+const useForm = <T extends Object>(initialState:T) => {...}  <- ojo que en una arrow funcion la zona izquierda es sólo para el nombre.El genérico va a la derecha.
+
+También puedo extender de varios:
+
+const useForm = <T extends Object | T extends Array>
+
+En nuestro caso con el objeto nos vale,pues es un objeto xd.
+Realmente haber echo esto me permite incluso no crear una interfaz y poder pasarle un initialState cualquiera al recibir el hook.Amazing:
+
+  const { formulario, handleChange } = useForm({
+    nombre: "",
+    email: "",
+  });
+
+Desde ahora tengo acceso a formulario.nombre y formulario.email y lo demás dará error.Puedo observar la gran reusabilidad y el desacoplamiento.
+
+Por último,dado que es mi customHook y puedo hacer lo que quiera podría hacer el spread del objeto y desestructurar ya en la primera linea las propiedades que quiera :
+
+  return {
+    formulario,
+    handleChange,
+    ...formulario <- retorno tanto el getter como el spread del getter
+  };
+}
+
+const { nombre,email,edad, handleChange} = useForm<FormData>...
+
+NOTA: no devuelvas un Arreglo en un customHook,esto hace las posiciones estáticas,si devuelvo un objeto me da igual el orden al desestructurar,como arriba.
+
+
