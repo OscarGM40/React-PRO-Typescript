@@ -362,4 +362,117 @@ const { nombre,email,edad, handleChange} = useForm<FormData>...
 
 NOTA: no devuelvas un Arreglo en un customHook,esto hace las posiciones estáticas,si devuelvo un objeto me da igual el orden al desestructurar,como arriba.
 
+				VIDEO 06 USE-CONTEXT CREATE-CONTEXT CONTEXT-PROVIDER
 
+Recuerda que un contexto es un espacio donde almacenar información al que tienen acceso todos los componentes para que no tenga la necesidad de mandar todo por las props.
+
+Bien,fijate que al usar el método createContext en TS ya me da error,porque en Javascript esto no da error:
+
+export const TodoContext = createContext(undefined);
+
+Pero en TS voy a tener que crearle un initialState siempre.
+
+Bien,pasemos al proveedor de información.Recuerda que es un HOC(una función que recibe un componente y devuelve otro):
+
+interface TodoProviderProps  {
+  children: JSX.Element | JSX.Element[];
+}
+
+export const TodoProvider = ({children}:TodoProviderProps) => {
+  return (
+   <TodoContext.Provider value={{}}>
+      {children}
+   </TodoContext.Provider>
+    );
+}
+Recuerda que no puedo pasar un argumento sin tipar.En este caso los children son un elemento JSX ,pero también pueden ser varios.Puedo usar una interfaz o un type:
+type props {
+  children: JSX.element | JSX.element[]
+}
+Fijate que esto es obligatorio,ya que si no le paso JSX.element[] no podría hacer esto:
+
+   <TodoProvider>
+      
+      <h1>Todo</h1>
+      <ul>
+        <li>TODO 1</li>
+        <li>TODO 2</li>
+        <li>TODO 3</li>
+      </ul>
+
+    </TodoProvider>
+
+Ya que el TodoProvider reciben un h1 y un ul.Obviamente no es una opción no ponerlo.Bien,dado que estamos en TS vamos a crear las interfaces para mostrar como luce un Todo(una tarea) y el TodoState:
+
+export interface Todo {
+  id:string;
+  desc: string;
+  completed: boolean;
+}
+
+export interface TodoState {
+  todoCount:number;
+  todos: Todo[];
+  completed: number;
+  pending: number;
+}
+
+Este paso es fundamental,tengo que tipar cada initialState.Ahora,al declararlo,le asigno la interfaz:
+const INITIAL_STATE: TodoState = {
+  todoCount: 2,
+  todos: [],
+  pending: 2,
+  completed: 0
+}
+La integración con VSC es tan grande que si me dejo una propiedad puedo incluso hacer que el IDE la autocomplete.
+
+En cuando al reducer debo recordar que las acciones llevan una sintaxis un tanto especial:
+
+/* recuerda que las actions del reducer llevan esta sintaxis.Fijate que cuando sepa que el payload será un id puedo usar payload: {id:string}.Genial */
+type TodoAction = 
+ | { type: 'ADD_TODO', payload: Todo }
+ | { type: 'TOGGLE_TODO', payload: {id:string} }
+
+
+/* el state es claro que ya tengo el tipo */
+export const todoReducer = (state:TodoState,action:TodoAction):TodoState=> {
+  switch(action.type){
+    case 'ADD_TODO':
+      return {
+        ...state,
+        todos: [...state.todos, action.payload]
+      }
+Por lo demás TS ayuda más que perjudica.
+
+Ya puedo terminar de proveer al provider del contexto que estoy creando con este reducer:
+
+export const TodoProvider = ({children}:TodoProviderProps) => {
+
+  const [TodoState,dispatch] = useReducer(todoReducer,INITIAL_STATE);
+  
+  return (
+   <TodoContext.Provider value={{
+      TodoState,
+      dispatch
+   }}>
+      {children}
+   </TodoContext.Provider>
+    );
+}
+
+Sin embargo, en el createContext inicial voy a tener problemas,xd.Voy a tener que crearme un type y además engañar a TS con {} as xxxType.
+Fijate que esté {} as xxx es como el operador ! ,es decir que le estoy diciendo a a TS que ese Objeto ya será luego de ese tipo,bla,bla,bla...
+
+export type TodoContextProps = {
+  todoState: TodoState;
+}
+
+export const TodoContext = createContext<TodoContextProps>({} as TodoContextProps);
+
+Ahora yo podré acceder a lo que mandado en el value del provider,pero aún me falta mandar el dispatch.Ya veré como mandarlo,pues de momento da error.
+
+export const TodoList = () => {
+
+  const { todoState } = useContext(TodoContext);
+
+Minuto 25
