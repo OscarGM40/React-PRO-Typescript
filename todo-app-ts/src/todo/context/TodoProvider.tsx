@@ -1,4 +1,4 @@
-import { useContext, useReducer } from 'react';
+import { useReducer } from 'react';
 import { TodoState } from '../interfaces/interfaces';
 import { TodoContext } from './TodoContext';
 import { todoReducer } from './TodoReducer';
@@ -35,9 +35,19 @@ export const TodoProvider = ({children}:TodoProviderProps) => {
 
   const [ todoState,dispatch] = useReducer(todoReducer,INITIAL_STATE);
   
+  const toggleTodo = (id:string) => {
+    dispatch({
+      type: 'TOGGLE_TODO',
+      payload: { id }
+    })
+  }
+
+
+
   return (
    <TodoContext.Provider value={{
       todoState,
+      toggleTodo
       // dispatch
    }}>
       {children}

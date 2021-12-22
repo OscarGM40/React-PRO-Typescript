@@ -366,9 +366,9 @@ NOTA: no devuelvas un Arreglo en un customHook,esto hace las posiciones estátic
 
 Recuerda que un contexto es un espacio donde almacenar información al que tienen acceso todos los componentes para que no tenga la necesidad de mandar todo por las props.
 
-Bien,fijate que al usar el método createContext en TS ya me da error,porque en Javascript esto no da error:
+Bien,fijate que al usar el método createContext en TS ya me da error,porque en Javascript iniciar algo con undefined no da error:
 
-export const TodoContext = createContext(undefined);
+export const TodoContext = createContext(undefined); <- JS no da error
 
 Pero en TS voy a tener que crearle un initialState siempre.
 
@@ -392,17 +392,15 @@ type props {
 Fijate que esto es obligatorio,ya que si no le paso JSX.element[] no podría hacer esto:
 
    <TodoProvider>
-      
       <h1>Todo</h1>
       <ul>
         <li>TODO 1</li>
         <li>TODO 2</li>
         <li>TODO 3</li>
       </ul>
-
     </TodoProvider>
 
-Ya que el TodoProvider reciben un h1 y un ul.Obviamente no es una opción no ponerlo.Bien,dado que estamos en TS vamos a crear las interfaces para mostrar como luce un Todo(una tarea) y el TodoState:
+Ya que este HOC TodoProvider recibe un h1 y un ul(luego recibe dos JSX.Element.Obviamente no es una opción no ponerlo.Bien,dado que estamos en TS vamos a crear las interfaces para mostrar como luce un Todo(una tarea) y el TodoState:
 
 export interface Todo {
   id:string;
@@ -474,5 +472,65 @@ Ahora yo podré acceder a lo que mandado en el value del provider,pero aún me f
 export const TodoList = () => {
 
   const { todoState } = useContext(TodoContext);
+RESUMEN: tengo que tipar los children como JSX.Element, cada action como un literal {type:string,payload:''} y el INITIAL_STATE y cada objeto que use en él también.Poco a poco.Sigamos con el dispatch.
 
-Minuto 25
+Fijate también que en el createContext no me interesa inicializar el initialState.Puedo dejarlo para más adelante:
+
+export type TodoContextProps = {
+  todoState: TodoState;
+}
+export const TodoContext = createContext<TodoContextProps>({} as TodoContextProps);
+
+Con todo esto me traigo mi state en algun componente para iterar sobre los Todos[].
+
+const { todoState } = useContext(TodoContext);
+const { todos } = todoState;
+Bien,ya puedo acceder a este context y a su xxxState,asi que itero por los Todos.Pero puedo ver que al crear un TodoItem y mandarle una prop tengo otro problema con TS,ya que está evitando que sea de tipo any:
+
+export const TodoItem = ({todo}) => { <- ya no podré traer una prop sin tipar
+  return (
+    <div>
+    </div>
+  )
+}
+
+Para evitar este error hay que crearse una interfaz por cada componente que reciba props.Genial:
+interface props {
+ todo: Todo
+}
+export const TodoItem = ( {todo} :props ) => {
+* Fijate que incluso si llamo a TodoItem sin pasarle como prop a todo me da error(esto hace innecesario los PropTypes?).
+
+ Fijate como ha usado el spread del todo y además lo junta de nuevo en el mismo movimiento al usar los {} es decir que ...variable lo esparce y {...variable} lo esparce y lo junta,quedando como estaba en un primer momento,pero ya he roto la referencia.:
+
+ todos: state.todos.map( ({...todo}) => {
+
+Fijate que Fernando crea un customHook devolviendo lo que quiere de un Context(incluso devuelve propiedades adicionales).Parece una buena idea:
+
+export const useTodos = () => {
+  const { todoState, toggleTodo } = useContext(TodoContext);
+  const { todos } = todoState;
+
+  return {
+    todos,
+    pendingTodos:todos.filter(todo => !todo.completed),
+    toggleTodo
+  }
+
+}
+Además que no tengo que importar más que este useHook en vez de las tropecientas importaciones.Comprobar esto.
+
+* IMPORTANTE: siempre debo ver donde usé el HOC provider.En este caso no puedo usar mi hook porque estoy fuera del HOC.No puedo usar el hook antes del <TodoProvider>.Claro que la solución es simple,y es usarlo dentro xd.
+
+export const Todo = () => {
+
+  const { pendingTodos } = useTodos();
+  return (
+    <TodoProvider>
+      <h1>Todo</h1>
+      <TodoList />
+    </TodoProvider>
+  )
+}	
+Y de momento nada más,debo practicar mucho más con Typescript.Seguir por su curso avanzado en unos días.
+	

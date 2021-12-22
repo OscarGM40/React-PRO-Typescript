@@ -2,7 +2,6 @@ import { Todo, TodoState } from "../interfaces/interfaces";
 
 
 
-
 /* recuerda que las actions del reducer llevan esta sintaxis.Fijate que cuando sepa que el payload será un id puedo usar payload: {id:string}.Genial */
 type TodoAction = 
  | { type: 'ADD_TODO', payload: Todo }
@@ -20,7 +19,7 @@ export const todoReducer = (state:TodoState,action:TodoAction):TodoState=> {
     case 'TOGGLE_TODO':
       return {
         ...state,
-        todos: state.todos.map(todo => {
+        todos: state.todos.map( ({...todo}) => {
           if(todo.id === action.payload.id){
             return {
               ...todo,
