@@ -1,0 +1,238 @@
+		CURSO UDEMY REACT PRO LLEVA TUS BASES AL SIGUIENTE NIVEL
+
+Fijate en las nuevas extensiones sugeridas por Fernando:
+cssmodules ayuda con los className={styles.class}
+mdx ayuda a ver mejor un markdownx(MDX es como JSX,pero para MD,es decir es markdown junto con React.
+
+					SECCION 02 REFORZAMIENTO SOBRE REACT
+
+En esta sección aprenderemos:
+
+1- TypeScript con los principales Hooks de React
+2- Pequeñas animaciones con GreenSock
+3- Timelines
+4- Custom Hooks
+5- Referencias a elementos del DOM
+6- Objetos como estado
+7- Interfaces
+8- Types
+9- Reducers
+10- Actions Creators
+
+Es una sección de reforzamiento en la cual la mayoría de los conceptos deberían de ser familiares a nosotros.
+
+						VIDEO 10 PRIMER COMPONENT
+
+De momento Fernando simplemente crea un Contador al que se le pasa por props el intialValue,forzando a crear la interfaz para el tipado.
+
+NOTA:con la extensión Toggle Quotes puedo cambiar el tipo de comillas.
+Para evitar esos ./../../../Input podemos agregar en el tsconfig.json la siguiente propiedad.
+{
+  "compilerOptions": {
+    ...
+    "baseUrl": "src",
+    ...
+} <- pues eso
+
+								VIDEO 11 PROPTYPES
+
+Es muy conveniente trabajar con PropTypes cuando estoy en Javascript.Los proptypes son revisados en tiempo de ejecución.Si bien en JS es muy necesario al usar TS no es necesario.
+Con TS puedo usar una interface o type la cual no va a llegar al bundle final de la app y conseguir el mismo efecto(fijate aqui que las PropTypes si que ocuparán espacio si las uso).
+
+type Props = {
+  initialValue?: number;
+}
+
+const Counter = ({initialValue}:Props) => {
+
+  const [ counter, setCounter ] = useState<number>(initialValue!);
+
+IMPORTANTE: si una prop considero que es opcional debo usar initialValue?:number; al declararla en la interfaz.Si la quiero obligatoria le quito la ?.
+NOTA:obviamente hay más formas de hacer esto:
+
+import { useState, FC } from 'react';
+ 
+interface CounterProps {
+    value: number
+}
+ 
+export const Counter: FC<CounterProps> = ( { value } ) => {
+
+NOTA: la única diferencia actualmente entre type e interface es que luego de creado puedes cambiar la interface o añadir prioridades, mientras que esto no se puede con type.
+
+					VIDEO 12 MANEJAR UN OBJETO COMO ESTADO
+
+  const handleClick = (value: number) =>{
+    setCounter({
+      counter: counter.counter + value,
+      clicks: counter.clicks + 1
+    });
+  }
+Recuerda que es una arrow function y que puedo hacerlo accediendo al previous.
+
+					VIDEO 13 OPTIMIZACIONES Y TIPADO
+
+Realmente Fernando aún no ha tipado el state.Esto es algo que debo hacer en cada useState<T>:
+
+type Counter = {
+  counter: number;
+  clicks: number;
+}
+
+const CounterBy: FC<Props> = ({ initialValue }: Props) => {
+  
+  const [counter, setCounter] = useState<Counter>({
+
+NOTA:useState<T> realmente siempre fue un genérico,sólo que en JS no importa.
+
+				VIDEO 14 USEEFFECT - COUNTER EFFECT
+
+NOTA:fijate que puedo imprimir con formato usando '%c' para inferir CSS:
+console.log("%cESto es un string con estilos","color:red;background:black").
+Como segundo argumento lleva una regla CSS.
+
+				VIDEO 15 PEQUEÑA ANIMACION Y USE-REF
+
+Para realizar una pequeña animación de rebote vamos a usar la libreria gsap de GreenSock(https://greensock.com/gsap/)
+
+En la última versión 3 han simplificado su uso agrupando todo en un único paquete.En Docs/Installation tengo varias formas de instalarlo.Usaremos NPM aunque mediante la CDN también es una buena opción:
+>npm install gsap (que sea la versión 3 npm i gsap@^3)
+
+Para usarlo me traigo el objeto gsap:
+import { gsap } from "gsap";
+
+Y uso su método to(SelectorCSS,{animaciones})
+Como SelectorCSS podria usar querySelector,getDocumentById,una simple clase CSS,en resumen cualquier selector.
+El segundo argumento es un objeto con las animaciones que quiero
+gsap.to(".class", {x:100}) <- moverá 100px al HTML con la clase 'class'.
+
+Con todo esto meto dentro del if del efecto una animacion para que suba 10px y luego los baje:
+  useEffect(() => {
+    if (counter >= MAXIMUM_COUNT) {
+      console.log(
+        "%cSe llegó al valor máximo",
+        "color: red;background: yellow;"
+      );
+      gsap
+       .to("h2", { y:-10, duration: 0.2, ease:'ease.out' })
+       .then(_=> gsap.to("h2",
+        { y:0, duration: 0.2, ease:'bounce.out' }));
+      }
+Fijate que gsap.to:Promise devuelve una promesa con lo que puedo encadenar animaciones.
+NOTA:en React no se recomienda apuntar con un selector de etiqueta(h2) ni siquierq mediante una clase(go.to('h2')).Esto lo veremos en el siguiente video de repaso
+
+						VIDEO 16 USE-REF Y TIMELINES
+
+Vamos a arreglar la forma de apuntar con gsap.to(),ya que no es recomendable usar ni selectores de etiqueta ni clases ya que podría haber otro elemento con la misma clase fácilmente sin que me dé cuenta.
+
+Adicionalmente GreenSock no recomienda usar las animaciones tal como hemos hecho,sino usando un timeline(lo que tienen los videos de Youtube).Asi puedo saber en que punto está la animación.
+
+IMPORTANTE:Cuando use referencias con useRef<T> en Typescript tengo que inicializarlas a null,por que si no cogerá undefined y no puedo trabajar con undefined:
+
+// <div> reference type
+const divRef = React.useRef<HTMLDivElement>(null);
+
+// <button> reference type
+const buttonRef = React.useRef<HTMLButtonElement>(null);
+
+// <br /> reference type
+const brRef = React.useRef<HTMLBRElement>(null);
+
+// <a> reference type
+const linkRef = React.useRef<HTMLLinkElement>(null);
+
+Recuerda además pasarle el genérico(useRef<T>)
+
+Ya sólo hay que apuntar a la ref.current     
+  gsap
+   .to(counterElement.current, { y:-10, duration: 0.2, ease:'ease.out' })
+   .then(_=> gsap.to(counterElement.current,
+        { y:0, duration: 0.4, ease:'bounce.out' }));
+
+IMPORTANTE:fijate que cuando use useRef no importa que no sepa el T.El error me va a decir el T del useRef<T>.
+
+Type 'MutableRefObject<HTMLHeadingElement | undefined>' is not assignable to type 'LegacyRef<HTMLHeadingElement> | undefined'. <- puedo sacar el <T> del error inicial.
+
+NOTA:cuando quiera apuntar a la referencia tengo que apuntar a .current.ESto es asi porque tomando const counterRef=useRef<T>(null) en counterRef sólo tengo el objeto que crea React,pero la referencia a lo que yo quiero está en la propiedad .current de ese objeto que se crea.
+
+IMPORTANTE:dado que en este ejemplo yo estoy tratando con un h2,que es HTML,debería usar useLayoutEffect y asegurarme asi que se carga el DOM(useEffect se dispara en cuanto puede,useLayoutEffect se dispará siempre despues que se cree todo el DOM,asegurandome que existirá ese h2).
+
+IMPORTANTE: dado que se recomienda usar un timeline al usar gsap lo creamos con el método timeline del objeto gsap:
+const timeline = gsap.timeline()
+El timeline es básicamente un controlador del tiempo. 
+      timeline
+        .to(counterElement.current, 
+        { y:-10, duration: 0.2, ease:'ease.out' })
+        .to(counterElement.current,
+          { y:0, duration: 1, ease:'bounce.out' });
+
+Puedo encadenar el metodo to,aunque también tiene from,play,pause,repeat.Incluso no hace falta encadenarlos,pues al ser una timeline van a ir en secuencia:
+timeline.to(_,__) <- va a ir la primera
+timeline.to(_,__) <- va a esperar e ir la segunda,pues es una timeline
+Ellas mismas se van a poner en cola pues es una timeline.
+
+		VIDEO 17 CUSTOM HOOKS CON REFERENCIAS A HTML QUE AUN NO HA SIDO CREADO
+
+Recuerda que la convención en React es que un hook empiece con use,da igual que sea mío que de ellos.
+
+export const useCounter = (initialValue: number) => {
+  
+  const [counter, setCounter] = useState<number>(initialValue);
+  const counterElement = useRef<HTMLHeadingElement>(null);
+  
+  /* functions */
+  const handleClick = (value: number) => {
+    setCounter((counter) =>
+      counter + value >= MAXIMUM_COUNT ? MAXIMUM_COUNT : counter + value
+    );
+  };
+
+  useLayoutEffect(() => {
+    if (counter >= MAXIMUM_COUNT) {
+      console.log(
+        "%cSe llegó al valor máximo",
+        "color: red;background: yellow;"
+      );
+
+      const timeline = gsap.timeline();
+
+      timeline
+        .to(counterElement.current, { y: -10, duration: 0.2, ease: "ease.out" })
+        .to(counterElement.current, { y: 0, duration: 1, ease: "bounce.out" });
+    }
+
+    return () => {};
+  }, [counter, MAXIMUM_COUNT]);
+
+  return { 
+    counter,
+    counterElement,
+    handleClick
+  }
+
+Recuerda que simplemente tengo que devolver algo y usar useName.No puede ser más fácil,asinto.
+Sin embargo,simplemente he refactorizado,cualquier error que tuviera lo sigo arrastrando,como que se cree una nueva instancia cada vez que el contador llegue a 10:
+   const timeline = gsap.timeline(); <- cada vez que salte el if crea un object.
+
+Sería interesante elevar esa creación de la instancia y no hacerlo en el useEffect.Lo veremos en la siguiente clase.
+
+				VIDEO 18 PARAMETRIZAR Y PULIR NUESTRO HOOK
+
+No hay mucha ciencia detrás para parametrizar un customHook.Simplemente le paso los argumentos que quiera:
+
+export const useCounter = (initialValue: number,MAXIMUM_COUNT:number=10)
+Fijate que puedo iniciar uno para hacerlo opcional(incluso puedo crear una interfaz para tipar los args).
+
+IMPORTANTE: useRef permite guardar cualquier cosa,perfectamente puedo guardar la instancia que no queremos volver a crear repetidamente.Simplemente llevará la ejecución del método como argumento del useRef.
+const timeline = useRef(gsap.timeline());
+Fijate que hasta ahora casi siempre lo inicias en null,pero puedo iniciarlo con lo que quiera,cualquier ejecución de un método,un constructor,lo que sea.Terriblemente interesante,asinto.
+NOTA:fijate que podria pasar la ref al <h1> o al botón,pero cambiando el useRef<T>
+NOTA:el equipo de React sugiere que cada uno de los useEffect tenga una responsabilidad única,no hay problema en que yo tenga múltiples useEffects:
+
+Por último, y pensando en reusar la animabilidad cambiamos el nombre y tipo:
+  const elementToAnimate = useRef<any>(null);
+
+							VIDEO 19 USE-REDUCER
+
+
+
