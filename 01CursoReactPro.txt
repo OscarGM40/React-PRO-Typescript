@@ -234,5 +234,152 @@ Por último, y pensando en reusar la animabilidad cambiamos el nombre y tipo:
 
 							VIDEO 19 USE-REDUCER
 
+ El useReducer se usa para lo mismo que el useState,sólo que normalmente se usa cuando el estado es un poco más complejo y/o cuando hay cambios que afectan a varias cosas de manera simultánea.
 
+Para implementar el hook useReducer necesitaré un initialState y una función pura reductora.A cambio se me devolverá el interaccionador con las acciones o dispatch y el estado:
+ const [state, dispatch] = useReducer(counterReducer, INITIAL_STATE);
+
+
+Fijate que en TS debería crear una interface para tipar el initialState.Y fijate en este estado inicial que guarda el estado anterior:
+
+interface CounterState {
+  counter: number;
+  previous: number;
+  changes: number;
+}
+
+const INITIAL_STATE:CounterState = {
+    counter: 0,
+    previous: 0,
+    changes: 0,
+}
+
+Guardar el previous state es algo muy común cuando se quiere dejar al usuario la posibilidad de volver al estado anterior.
+
+				VIDEO 20 FUNCION PURA - XXXREDUCER
+
+Fijate que en la actualidad esta aproximación para tipar todas las posibles acciones es de lo mejorcito:
+
+type Action = 
+  | { type: 'increaseBy', payload: {value: number}}
+  | { type: 'decrementBy', payload: {value: number}}
+  | { type: 'reset' } 
+
+Recuerda que una función pura reductora es una función pura que toma dos argumentos,el estado anterior y la acción y devuelve el nuevo estado:
+
+const counterReducer = (state:CounterState, action:Action) => {
+  switch (action.type) {
+    case 'increaseBy':
+      return {
+        ...state,
+        counter: state.counter + action.payload.value,
+        previous: state.counter,
+        changes: state.changes + 1,
+      }
+    case 'decrementBy':
+      return {
+        ...state,
+        counter: state.counter - action.payload.value,
+        previous: state.counter,
+        changes: state.changes + 1,
+      }
+    case 'reset':
+      return {
+        ...state,
+        counter: 0,
+        previous: 0,
+        changes: 0,
+      }
+    default:
+      return state;
+  }
+}
+Disparo las acciones que quiere Fernando,etc:
+  
+const handleIncrease = (value:number) => {
+    dispatch({ type: 'increaseBy', payload: {value} });
+  }
+
+const handleDecrease = (value:number) => {
+   dispatch({ type: 'decrementBy', payload: {value} });
+  }
+De nuevo es buena idea dejar el useState para cosas simples y usar un reducer en cuanto vea que es necesario.
+
+				VIDEO 22 SEPARAR ACCIONES,INTERFACES Y REDUCER
+
+En este punto tenemos todo en un mismo archivo,esto es una mala práctica.
+Debería de refactorizar siguiendo a Angular,creando un folder a especie de módulo.En este folder puedo crear las carpetas actions,interfaces y reducer y archivos con extensión .ts(pues no usan JSX).Realmente es sencillo en este punto.
+
+En el siguiente video veré los ActionsCreators o creadores de acciones.Estos generadores nacieron porque si yo ahora quisiera hacer un cambio muy sutil(como cambiar increaseBy por increaseByNumber) tendré que cambiar cosas en varios archivos(en el actions.ts,en el reducer,en cada dispatch...).
+Sería mejor tener centralizada la creación de acciones.
+NOTA:todo esto se refiere a que no debo escribir los nombres de las acciones en duro:   dispatch({ type: 'increaseBy').Obviamente,es mejor inferir ese valor desde otro archivo.
+
+						VIDEO 23 ACTION CREATORS
+
+Doc: https://read.reduxbook.com/markdown/part1/04-action-creators.html
+Es momento de cambiar como estoy infiriendo los tipos de las acciones,y no hacerlo directamente.
+
+IMPORTANTE: una actionCreator es una función pura.Este concepto de implementar las actions types mediante action Creators viene sugerido desde el patrón redux
+
+NOTA:usualmente se acostumbra a anteponerle 'do' a estas actionCreators.
+
+Con todo esto en mente creo las funciones actionCreators que tienen que devolver un objeto de tipo Action.Si llevan payload lo recibirań por argumento:
+
+export const doReset = ():Action => ({
+    type: 'reset',
+})
+
+export const doIncreaseBy = (value: number):Action => ({
+    type: 'increaseBy',
+    payload: { value },
+})
+* Fijate que la doc oficial no retorna un objeto directamente con ({}):
+export const doIncreaseBy = (value:number):Action => {
+  return { ... } } .
+Es en el return donde lo devuelve,pero puedo acortar ese código.
+
+Lo bueno de todo esto es que ahora el dispatch llamará a estas actionCreators de una forma muy sencilla:
+
+Cambiar esto: 
+ const handleIncrease = (value:number) => {
+    dispatch({ type: 'increaseBy', payload: {value} });
+  }
+por:
+  const handleIncrease = (value:number) => {
+    dispatch(doIncreaseBy(value));
+  }
+
+Queda mucho más limpio:
+  const handleIncrease = (value:number) => {
+    dispatch(doIncreaseBy(value));
+  }
+
+Todo esto se debe acompañar con una enum o un Map para no introducir los strings en duro:
+
+export enum ActionsTypes {
+  INCREASE_BY = 'increaseBy',
+  DECREMENT_BY = 'decrementBy',
+  RESET = 'reset',
+}
+export type Action =
+  | { type:ActionsTypes.INCREASE_BY,payload:{ value: number } }
+  | { type:ActionsTypes.DECREMENT_BY,payload:{ value: number } }
+  | { type: ActionsTypes.RESET }  
+
+IMPORTANTE. cuando tengo muchas importaciones de esta forma:
+import { doIncreaseBy, doDecrementBy, doReset } from './actions/actions';
+Es buena idea importar todo bajo un alias:
+
+import * as actionsCreators from './actions/actions';
+
+Y luego usar todo mediante este objeto:
+dispatch( actionsCreators.doIncreaseBy(value) )
+
+Quizás con 3 aún no se ve muy bien las ventajas pero fijate cuando tienes 10 o 15 que realmente es una buena idea.
+
+						SECCION 03 INICIO DEL PROYECTO
+
+Esta sección es totalmente opcional, el objetivo es crear una aplicación de React con TypeScript que nos sirva para las próximas secciones.
+
+Aquí no veremos nada nuevo de React, crearemos rutas y dejaremos todo listo para las secciones que vienen.
 
