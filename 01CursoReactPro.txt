@@ -383,3 +383,49 @@ Esta sección es totalmente opcional, el objetivo es crear una aplicación de Re
 
 Aquí no veremos nada nuevo de React, crearemos rutas y dejaremos todo listo para las secciones que vienen.
 
+				VIDEO 27-28 INICIO PROYECTO Y REACT-ROUTER V6
+
+Creo un nuevo proyecto con create-react-app <name> --template typescript.Limpio un poco lo necesario y copio los estilos del gist de Fernando.
+Fernando enseñara el lazy load tanto con la version 6 como con el 5 del router:
+npm i react-router-dom@6 | 5
+
+Recuerda: redo es con CTRL+r.
+Creamos tres simples rutas:
+
+  <BrowserRouter>
+      <div className="main-layout">
+        <nav>
+          <img src={logo} alt="" />
+          <ul>
+            <li>
+              <NavLink 
+                to="/"
+                className={({isActive}) => isActive ? "nav-active":""}>Home</NavLink>
+            </li>
+            <li>
+              <NavLink 
+                to="/about"
+                className={({isActive}) => isActive ? "nav-active":""}>About</NavLink>
+            </li>
+            <li>
+              <NavLink 
+                to="/users"
+                className={({isActive}) => isActive ? "nav-active":""}>Users</NavLink>
+            </li>
+          </ul>
+        </nav>
+
+        <Routes>
+          <Route path="/" element={ <h1>Home Page</h1> } />
+          <Route path="/about" element={ <h1>About Page</h1> } />
+          <Route path="/users" element={ <h1>Users Page</h1> } />
+          <Route path="/*" element={ <Navigate to="/home" replace /> } />
+        </Routes>
+      </div>
+    </BrowserRouter>
+
+En el siguiente video hace lo mismo pero con la versión 5.
+
+NOTA:desde react-router-dom v6 se incorporan por defecto los archivos de definición de tipos para Typescript,con lo que no tengo que instalarlos,algo que si tengo que hacer con la v5(npm i @types/react-router-dom).
+
+Este es un buen momento para hacer una tag-release
