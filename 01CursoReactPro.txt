@@ -429,3 +429,25 @@ En el siguiente video hace lo mismo pero con la versión 5.
 NOTA:desde react-router-dom v6 se incorporan por defecto los archivos de definición de tipos para Typescript,con lo que no tengo que instalarlos,algo que si tengo que hacer con la v5(npm i @types/react-router-dom).
 
 Este es un buen momento para hacer una tag-release
+
+				SECCION 04 - LAZY LOAD - CHUNKS - REACT ROUTER V6 | V5
+
+Si tuviera una app de React muy grande debo implementar el lazy load y cargar módulos bajo demanda.¿Para qué cargar toda la app si el usuario primero debe pasar por la autenticación?.
+
+Veremos varias técnicas para realizar esto(cargar por módulos,cargar todo por lazy-load).Es muy recomendable cargar mediante módulos y no cargar todo por lazy-load(ya que se hace una petición al backend y éste regresa ese chunk).
+
+Veremos como cambiar los nombres a los chunks(lo cual es muy útil al trabajar con ServiceWorker y manejo del caché)
+
+Veremos lazy-load por componente y React Suspense también.
+
+En esta sección vamos a llevar nuestro sistema de rutas a otro nivel, el objetivo principal sera:
+1- Aplicar Lazy Load en cada Componente
+2- Aplicar Lazy Load por módulo
+
+La idea del módulo es que nos permita cargarlo y todas sus dependencias en conjunto.Es una sección fundamental.
+
+					VIDEO 35 PREPARAĆION DEL PROYECTO
+
+NOTA: dado que hubo muchos cambios en el routeer Fernando va a enseñar las dos versiones,ya que varias cosas como React Suspense cambiaron bastante.
+Pide hacer un fork del proyecto,yo lo haré con la tag-release y en ambas versiones.
+
