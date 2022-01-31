@@ -681,3 +681,176 @@ NOTA:Una pequeña ayuda para quienes les interesa, para mantener la ruta activa 
     {
         to: '/lazyload', //=> eliminar el / del final para que el navlink detecte la ruta activa
         path: 'lazyload/*',
+
+También recomiendan crear un Componente llamado Outlet para las rutas hijas.
+
+				VIDEO 45 MISMO PROYECTO CON VERSION 5 DEL ROUTER
+
+Voy a crear el mismo proyecto de forma legacy,debido a los breaking changes.Usaré vite(veet):
+npm init vite@latest <proyectName> -- --template react-ts
+
+* Recuerda que esto crea una carpeta.
+Instalo la versión 5:
+npm i react-router-dom@^5
+NOTA:desde ya puedo ver que TS necesita los definition types,y que hasta la 6 tengo que instalarlos:
+npm i -D @types/react-router-dom
+
+Bien,en cuanto a las rutas hay que usar exact,activeClassName y Switch.En la 6 cambió a no usar exact,usar una callback con props.isActive y Routes:
+    <BrowserRouter>
+      <div className="main-layout">
+        <nav>
+          <img src={logo} alt="" />
+          <ul>
+            <li>
+              <NavLink 
+                to="/lazy1"
+                activeClassName="nav-active"
+                exact>Lazy1
+              </NavLink>
+            </li>
+            <li>
+              <NavLink 
+                to="/lazy2"
+                activeClassName="nav-active"
+                exact>Lazy2
+              </NavLink>
+            </li>
+            <li>
+              <NavLink 
+                to="/lazy3"
+                activeClassName="nav-active"
+                exact>Lazy3
+              </NavLink>
+            </li>
+          </ul>
+        </nav>
+
+        <Switch>
+          <Route path="/lazy1">
+            <LazyPage1 />
+          </Route>
+          <Route path="/lazy2">
+            <LazyPage2 />
+          </Route>
+          <Route path="/lazy3">
+            <LazyPage3 />
+          </Route>
+        </Switch>
+      </div>
+    </BrowserRouter>
+
+También podia haber usado component en vez de element
+
+			VIDEO 47 CREAR ARCHIVO DE RUTAS INDEPENDIENTE
+
+Fijate que Fernando optó por una aproximación con un par de cambios interesantes.Agregó una propiedad opcional children:Routes[] que fijate que hace referencia a la propia interfaz en donde está:
+type JSXComponent = () => JSX.Element;
+
+interface Routes {
+  path: string;
+  Component: JSXComponent;
+  name: string;
+  children?: Routes[]
+}
+
+
+export const routes: Routes[] = [
+  { 
+    path:'/lazy1',
+    Component: LazyPage1,
+    name: 'LazyPage 1',
+  },
+  { 
+    path:'/lazy2',
+    Component: LazyPage2,
+    name: 'LazyPage 2',
+  },
+  { 
+    path:'/lazy3',
+    Component: LazyPage3,
+    name: 'LazyPage 3',
+  },
+]
+* Nada me impide crear una propiedad en una interfaz del mismo tipo que la interfaz donde estoy creandola.Interesante.
+Recuerda usar rutas dinámicas siempre que puedas:
+      <ul>
+            {routes.map(({ path, name }) => (
+              <li key={path}>
+                <NavLink to={path} activeClassName="nav-active" exact>
+                  {name}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <Switch>
+          {routes.map(({ path, Component }) => (
+            <Route key={path} path={path} 
+            render={() => <Component />}>
+            </Route>
+          ))}
+
+					VIDEO 49 LAZYLOAD Y SUSPENSE
+
+IMPORTANTE: de nuevo se necesita exportar por defecto un componente para cargarlo bajo demanda.Recuerda que en cuanto use el método lazy necesitaré el HOC <Suspense> y su propiedad fallback:
+
+*Usar carga perezosa implica
+const LazyPage1 = lazy(() => import('../01-lazyload/pages/LazyPage1'));
+const LazyPage2 = lazy(() => import('../01-lazyload/pages/LazyPage1'));
+const LazyPage3 = lazy(() => import('../01-lazyload/pages/LazyPage1'));
+usar el HOC <Suspense> y su propiedad fallback en un punto alto
+<Suspense fallback={<div>Loading...</div>}>
+
+						VIDEO 50 RENOMBRAR CHUNKS
+
+Puedo renombrar un chunk de igual manera que en la v6 :
+const LazyPage1 = lazy(() => import(/* webpackChunkName "LazyChunk1" */'../01-lazyload/pages/LazyPage1'));
+const LazyPage2 = lazy(() => import(/* webpackChunkName "LazyChunk2" */'../01-lazyload/pages/LazyPage2'));
+const LazyPage3 = lazy(() => import(/* webpackChunkName "LazyChunk3" */'../01-lazyload/pages/LazyPage3'));
+
+NOTA:puedo comprobar que cambian los nombres haciendo el build también.
+En cuanto a usar Vite no me deja renombrar el chunk pero sigue siendo muy identificativo el nombre.
+
+				VIDEO 51 LAZYLOAD POR MODULO Y NO POR COMPONENTES
+
+Fijate que en la versión 5 era mucho más complicado usar las rutas hijas.Habia que usar el hook useRouteMath,el cual me devuelve el path y la url.La url iba para el <Link> o el <NavLink> y el path para <Route>.Recuerda que se redireccionaba con <Redirect> y no con <Navigate> como en la v6 :
+export const LazyLayout = () => {
+  const { path, url } = useRouteMatch();
+
+  return (
+    <div>
+      <h1>LazyLayout Page</h1>
+      <ul>
+        <li>
+          <NavLink to={`${url}/lazy1`}>Lazy Page 1</NavLink>
+        </li>
+        <li>
+          <NavLink to={`${url}/lazy2`}>Lazy Page 2</NavLink>
+        </li>
+        <li>
+          <NavLink to={`${url}/lazy3`}>Lazy Page 3</NavLink>
+        </li>
+      </ul>
+
+      <Switch>
+        <Route exact path={`${path}/lazy1`}>
+          <LazyPage1 />
+        </Route>
+        <Route exact path={`${path}/lazy2`}>
+          <LazyPage2 />
+        </Route>
+        <Route exact path={`${path}/lazy3`}>
+          <LazyPage3 />
+        </Route>
+        <Redirect to={`${path}/lazy2`} />
+      </Switch>
+    </div>
+
+Y para la clase activa hay que quitar exact de la Route padre:
+  <NavLink to={path} activeClassName="nav-active" >
+Seguramente habia formas más sencillas de hacerlo pero aqui tengo una forma con la v5 por si la necesito.
+
+Hago el commit y paso a la siguiente sección.
+	
+
