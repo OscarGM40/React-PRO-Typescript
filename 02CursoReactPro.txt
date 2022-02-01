@@ -1,0 +1,169 @@
+			SECCION 05 PATRON DE COMPONENTES -COMPOUND COMPONENT PATTERN-
+
+A grosso modo un patrón es una forma de hacer,que si la aplico voy a tener ciertos beneficios(ejemplo patrón redux).
+
+El patrón compound component pattern me ayuda a crear un componente y dentro de ese componente esperar ciertos componentes hijos(es como un HOC,pero no es exactamente eso).Lo que Fernando quiere mostrar es que puedo meter dentro de un componente otro componente y dentro de ese componente que ya esta dentro del primero meter otro,etc(anidar componentes) 
+Ionic lo usa bastante y casi cualquier libreria de componentes hace lo mismo.
+No es el favorito de Fernando,veremos ventajas y problemas al usarlo.
+
+En esta sección aprenderemos el patrón de construcción de componentes llamado "Compound Component Pattern" el cual es muy usado por Material UI, ionic y muchos otros que trabajan con componentes previamente creados que se pueden anidar entre si mediante HOCs (Higher Order Components)
+
+Puntualmente aprenderemos el patrón y crearemos nuestro propio ejemplo aplicado.
+
+						VIDEO 57 CONTINUACIÓN DEL PROYECTO
+
+NOTA:si quiero usar Module CSS los archivos tienen que llamarse xxx.module.css.Esto es algo de create-react-app y no puede cambiarse.
+Descomprimo el zip que proporciona Fernando y dejo todo preparado
+
+				VIDEO 58 COMPONENTE BÁSICO TRADICIONAL
+
+NOTA: puedo imprimir una hoja de estilos siempre que quiera cerciorarme que la estoy referenciando correctamente:
+
+import styles from '../styles/styles.module.css';
+console.log(styles);
+Debería ver los estilos(más bien la clase con el hash):
+
+Object:
+  buttonAdd: "_buttonAdd_1d678_51"
+  buttonMinus: "_buttonMinus_1d678_28"
+  buttonsContainer: "_buttonsContainer_1d678_22"
+  countLabel: "_countLabel_1d678_41"
+  productCard: "_productCard_1d678_3"
+  productDescription: "_productDescription_1d678_18"
+  productImg: "_productImg_1d678_13"
+
+Como siempre usar CSS Modules hará cada clase única mediante un hash
+
+Respecto al componente será una simple imagen con unos botones:
+<div className={ styles.productCard } >
+      <img src="/coffee-mug.png" alt="coffe-mug" className={ styles.productImg}/>
+      {/* <img src={NoImage} alt="no-image" className={ styles.
+        productImg}/> */}
+
+        <span className={ styles.productDescription}></span>
+       
+        <div className={ styles.buttonsContainer}>
+
+          <button className={ styles.buttonMinus }>-</button>
+          <div className={ styles.countLabel}> 0 </div>
+          <button className={ styles.buttonAdd }>+</button>
+
+        </div>
+
+* Fijate que puedo meter la imagen en una carpeta public y referenciarla con /image.png(el public se sobreentiende).Cualquier cosa que meta en la carpeta public(a la altura de la raíz del proyecto) compilará al build de vite en la raiz también(irá a build/*) con lo que las rutas coincidirán perfectamente.
+
+Fijate como va a controlar que nunca se devuelva un valor negativo con Math.max(value1,value2).Interesante:
+  
+const increaseBy = (value: number) =>{
+    setCounter( prev => Math.max(prev + value,0));
+  }
+Un botón restará 1 y el otro lo sumará.Tipico contador.
+
+				VIDEO 59 CUSTOM HOOK - USE PRODUCT
+
+Creamos un custom Hook como tarea.Muy sencillo:
+
+export const useProduct = (initialValue: number) => {
+  
+  const [counter, setCounter] = useState<number>(initialValue);
+
+  const increaseBy = (value: number) => {
+    setCounter(prev => Math.max(prev + value, 0));
+  }
+
+  return {
+    counter,
+    increaseBy
+  }
+}
+Recuerda que un custom Hook permite descentralizar lógica dejando el componente mucho más limpio y legible y además reutilizar esa lógica de forma rápida.Es una simple función cuyo nombre comenzará por useXXX y retornará lo que desee,normalmente.
+
+				VIDEO 60 RECIBIR PROPS AL COMPONENTE HIJO
+
+Normalmente no voy a tener un sólo producto,sino varios.Asi que el padre los debería pasar.Veamos como luce las props en el hijo:
+
+interface Product {
+  id: number | string;
+  title: string;
+  img?:string;
+}
+
+interface ProductCardProps {
+  product: Product;
+}
+
+export const ProductCard = ({product}:ProductCardProps) => {
+
+Cada ProductCard va a recibir props.product(mínimo).Perfecto.El padre deberá mandar esa prop pues.
+   <ProductCard product={ product }/>
+
+Todo esto funciona perfectamente pero puedo ver dos inconvenientes.Cualquier cambio en el hijo debe informar al padre y además el dev tiene muy poco control,sólo puede mandar el producto(más bien debe).
+El dev | usuario no podría cambiar los estilos,o mandar otros atributos,o cambiar el estilo inicial.Aqui es donde entrán diferentes patrones para crear estos componentes.
+
+			VIDEO 61 COMPOUND COMPONENT PATTERN - PRIMEROS PASOS -
+
+El Compound Component Pattern es un patrón de,como su nombre indica,composición de componentes.Un <select> con sus <options> explica muy bien la idea de este patrón:
+<select name="cars">
+  <option value="volvo">Volvo</option>
+  <option value="saab">Saab</option>
+  <option value="mercedes">Mercedes</option>
+  <option value="audi">Audi</option>
+</select>
+El usuario puede elegir entre diferentes opciones,permitiendo cambiar el componente.Habrá que implementar varios pasos.Empezaremos creando pequeños componentes en el anterior componente hijo ProductCard:
+
+
+/* Compound Components Pattern modulariza todo en pequeños componentes */
+export const ProductImage = ({img=""}) => {
+  return (
+     <img src={img || NoImage} alt="Image" className={ styles.productImg}/>
+  )
+}
+
+/* puedo pasar el type definition con un objeto custom y no crear otra interface, dado que solo es un argumento */
+export const ProductTitle = ({title}:{title:string}) => {
+  return (<span className={styles.productDescription}>{title}</span>);
+}
+
+interface ProductButtonsProps {
+  counter:number;
+  increaseBy: (value:number) => void;
+}
+
+export const ProductButtons = ({counter, increaseBy}:ProductButtonsProps) => {
+
+  return (
+    <div className={styles.buttonsContainer}>
+      <button className={styles.buttonMinus} onClick={() => increaseBy(-1)}>
+        -
+      </button>
+
+      <div className={styles.countLabel}> {counter} </div>
+
+      <button className={styles.buttonAdd} onClick={() => increaseBy(+1)}>
+        +
+      </button>
+    </div>
+  );
+}
+
+Y el componente ahora luciria asi:
+
+export const ProductCard = ({product}:ProductCardProps) => {
+   const { counter, increaseBy } = useProduct(0);
+  
+  return (
+    <div className={ styles.productCard } >
+      <ProductImage img={product.img}/>
+      <ProductTitle title={product.title}/>
+      <ProductButtons counter={counter} increaseBy={increaseBy} />
+    </div>
+  );
+};
+
+Obviamente todo funciona perfectamente.Pero esto sólo es el punto inicial,el cual fue modularizar un componente en partes más pequeñas,obviamente siguiendo un objetivo,en este caso hicimos la Image,el Title y la zona de Botones,pero podrian ser otros.
+
+NOTA: usar en una <img alt="image"> la palabra image dará un warning de que es redundante usar la palabra image en el alt de una image.
+
+			VIDEO 62 COMPOUND COMPONENT PATTERN - SEGUNDO PASO -
+
+
