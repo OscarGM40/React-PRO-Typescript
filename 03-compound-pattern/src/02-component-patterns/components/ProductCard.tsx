@@ -1,80 +1,54 @@
-import styles from '../styles/styles.module.css';
-import NoImage from '../assets/no-image.jpg';
-import { useProduct } from '../hooks/useProduct';
+import styles from "../styles/styles.module.css";
+
+import { useProduct } from "../hooks/useProduct";
+import { createContext } from "react";
+
+import {
+  ProductCardProps,
+  ProductContextProps,
+} from "../interfaces/interfaces";
 
 /* puedo imprimir los estilos para asegurarme que están referenciados correctamente */
 // console.log(styles);
 
-interface Product {
-  id: number | string;
-  title: string;
-  img?:string;
-}
+export const ProductContext = createContext({} as ProductContextProps);
+const { Provider } = ProductContext;
 
-interface ProductCardProps {
-  product: Product;
-}
+export const ProductCard = ({ children, product }: ProductCardProps) => {
 
-/* Compound Components Pattern modulariza todo en pequeños componentes */
-export const ProductImage = ({img=""}) => {
-  return (
-     <img src={img || NoImage} alt="Image" className={ styles.productImg}/>
-  )
-}
-
-/* puedo pasar el type definition con un objeto custom y no crear otra interface, dado que solo es un argumento */
-export const ProductTitle = ({title}:{title:string}) => {
-  return (<span className={styles.productDescription}>{title}</span>);
-}
-
-interface ProductButtonsProps {
-  counter:number;
-  increaseBy: (value:number) => void;
-}
-
-export const ProductButtons = ({counter, increaseBy}:ProductButtonsProps) => {
+  const { counter, increaseBy } = useProduct(0);
 
   return (
-    <div className={styles.buttonsContainer}>
-      <button className={styles.buttonMinus} onClick={() => increaseBy(-1)}>
-        -
-      </button>
+    <Provider
+      value={{
+        counter,
+        increaseBy,
+        product,
+      }}
+    >
+      <div className={styles.productCard}>
+        {children}
 
-      <div className={styles.countLabel}> {counter} </div>
+        {/* <ProductImage img={product.img}/> */}
+        {/* <img src={product.img || NoImage} alt={product.title} className={ styles.productImg}/> */}
 
-      <button className={styles.buttonAdd} onClick={() => increaseBy(+1)}>
-        +
-      </button>
-    </div>
-  );
-}
-
-
-export const ProductCard = ({product}:ProductCardProps) => {
-
-   const { counter, increaseBy } = useProduct(0);
-  
-  return (
-    <div className={ styles.productCard } >
-
-      <ProductImage img={product.img}/>
-      {/* <img src={product.img || NoImage} alt={product.title} className={ styles.productImg}/> */}
-
-      <ProductTitle title={product.title}/>
+        {/* <ProductTitle title={product.title}/> */}
         {/* <span className={ styles.productDescription}>{product.title}</span> */}
-       
-      <ProductButtons counter={counter} increaseBy={increaseBy} />
-{/*         <div className={ styles.buttonsContainer}>
-          <button 
-            className={ styles.buttonMinus }
-            onClick={ () => increaseBy(-1) } >-</button>
 
+        {/* <ProductButtons counter={counter} increaseBy={increaseBy} /> */}
+        {/*         <div className={ styles.buttonsContainer}>
+          <button 
+          className={ styles.buttonMinus }
+          onClick={ () => increaseBy(-1) } >-</button>
+          
           <div className={ styles.countLabel}> {counter} </div>
-
+          
           <button 
-            className={ styles.buttonAdd }
-            onClick={ () => increaseBy(+1) } >+</button>
+          className={ styles.buttonAdd }
+          onClick={ () => increaseBy(+1) } >+</button>
         </div> */}
-    </div>
+      </div>
+    </Provider>
   );
 };
+

@@ -166,4 +166,223 @@ NOTA: usar en una <img alt="image"> la palabra image dará un warning de que es 
 
 			VIDEO 62 COMPOUND COMPONENT PATTERN - SEGUNDO PASO -
 
+Recuerda que el Compound Component Pattern busca tener un componente padre con una serie de opciones como componentes hijos,igual que la etiqueta html <select> y sus <options>.
+
+Bien,el siguiente paso es llamar al hijo así:
+<ProductCard product={ product }>
+</ProductCard>
+y no llamarlo en una self-closed tag( <xxx />).En el momento que haga esto TS se quejará diciendo que el hijo no recibe los children como props(ya que podría pasarle cualquier cosa dentro).
+
+Este children es de tipo React.ReactElement(o también es de tipo () => JSX.Element):
+
+interface ProductCardProps {
+  product: Product;
+  children?: React.ReactElement | React.ReactElement []; 
+}
+
+IMPORTANTE: childrens son opcionales,y si vinieran puede venir uno o un arreglo de ellos.Fijate que intencionalmente exportamos los componentes en el paso anterior:
+
+El padre quedará asi(falta completar los requerimientos):
+<ProductCard product={ product }>
+    <ProductImage />
+    {/* <ProductTitle /> */}
+    {/* <ProductButtons /> */}
+ </ProductCard>
+
+Y el hijo quedará asi:
+
+export const ProductCard = ({children, product}:ProductCardProps) => {
+
+  return (
+    <div className={ styles.productCard } >
+      { children }
+    </div>
+
+Obviamente no puedo llamar a <ProductTitle /> sin pasarle un title,pero incurrimos en lo mismo si lo hago.No estoy dando libertad al usuario al pasar las props.
+El siguiente paso lógico es ver como compartir toda esta información que es necesaria entre padre e hijo.
+
+				VIDEO 63 UNIFICAR EXPORTACIÓN DE COMPONENTES
+
+Lamentablemente aún no vamos a resolver el problema directamente,sino que Fernando nos va a mostrar otra técnica de hacer lo mismo que el video anterior.
+
+Sería más conveniente poder usar algo como <ProductCard.Image /> o <ProductCard.Title> ,así sé que son hijos de ProductCard de una forma mucho más clara.
+
+Un primer paso sería esto:
+En el hijo creo y asigno estas propiedades:
+ProductCard.Title = ProductTitle;
+ProductCard.Image = ProductImage;
+ProductCard.Buttons = ProductButtons;
+
+* y en el padre ya puedo usarlo asi:
+ <ProductCard product={ product }>
+    <ProductCard.Image />
+    <ProductCard.Title />
+    <ProductCard.Buttons />
+  </ProductCard>
+
+Fernando comenta que debo estandarizar en mi aplicación una de las dos formas,o uso una o uso otra.
+
+				VIDEO 64 COMPOUND COMPONENT PATTERN
+
+Ahora,si,ha llegado el momento de solucionar el paso de información usando este patrón.
+NOTA: hay varias maneras de compartir información entre padre e hijo.En este caso necesitamos una que no sea mediante las props.Podriamos usar Redux o el Context API.Usaremos la API Context,ya que ya viene con React.
+
+Realmente es bastante sencillo,lo primero será crearse un Contexto(recuerda que en TS no puedo crearlo con el undefined):
+
+interface ProductContextProps {
+  product: Product;
+  counter: number;
+  increaseBy: (amount: number) => void;
+}
+
+const productContext = createContext({} as ProductContextProps);
+const { Provider } = productContext;
+
+* Para saber como luce es según el value.Y el hijo ahora será englobado con el HOC <Provider> pasandole en el value lo necesario para que funcione todo(en este caso,el product,el counter y el increaseBy:
+
+ return (
+    <Provider value={{
+      counter,
+      increaseBy,
+      product
+    }}>
+
+    <div className={ styles.productCard } >
+      { children }
+    </div>
+    </Provider>
+
+Obviamente tengo todo en un archivo y queda muy sucio.Habrá que refactorizar esto.Pero fijate que todo esto se ha echo sólo para que los componentes opcionales no usen props.Interesante:
+
+export const ProductButtons = () => {
+
+  const {counter, increaseBy} = useContext(productContext);
+
+  return (
+    <div className={styles.buttonsContainer}>
+      <button className={styles.buttonMinus} onClick={() => increaseBy(-1)}>
+        -
+      </button>
+
+      <div className={styles.countLabel}> {counter} </div>
+
+      <button className={styles.buttonAdd} onClick={() => increaseBy(+1)}>
+        +
+      </button>
+    </div>
+  );
+}
+Al coger todo del store ya no usará props ninguno.Solucionando el fallo que tenimamos.Desde luego es muy interesante y bastante sencillo.
+
+NOTA: una forma más compacta de no usar if/elseif/else es usar varios ||:
+En vez de usar esto:
+ if (img) {
+    imgToShow = img;
+  } else if (product.img) {
+    imgToShow = product.img;
+  } else {
+    imgToShow = NoImage;
+  }
+  return <img src={imgToShow} alt="Image" className={styles.productImg} />;
+puedo simplemente usar:
+ return <img src={img || product.img || NoImage} alt"Product" />
+El operador lógico OR cuando un valor sea false pasará al siguiente y asi hasta que encuentre uno true(NoImage siempre es true)
+
+Y otra forma sería:
+const src = img ? img : product.img ?? noImage;
+
+Volviendo al title y la img parece que ha querido dejar todo como opcional:
+export const ProductTitle = ({title}:{title?:string}) => {
+  const { product  } = useContext(ProductContext);
+
+  return <span className={styles.productDescription}>
+    {title ? title : product.title }</span>;
+};
+
+Fijate que era en ( {title}:{title? <- aqui) para hacerla opcional.
+
+					VIDEO 65 SEPARANDO LA LÓGICA
+
+Muevo las interfaces al folder interfaces/product.interfaces.ts.Muevo cada pequeño componente a un componente nuevo(pues son un simple componente):
+
+import { useContext } from "react";
+import { ProductContext } from "./ProductCard";
+import NoImage from "../assets/no-image.jpg";
+import styles from "../styles/styles.module.css";
+
+export const ProductImage = ({ img = "" }) => {
+  const { product } = useContext(ProductContext);
+
+  return <img src={img || product.img || NoImage} alt="Image" className={styles.productImg} />;
+};
+Simplemente los creo(ProductImage.tsx,ProductTitle.tsx,...) y arreglo dependencias.
+Dado que están todos juntos lo mejor es crear un index.ts y exportar en masa:
+export { ProductButtons } from "./ProductButtons";
+export { ProductTitle } from "./ProductTitle";
+export { ProductImage } from './ProductImage'
+export { ProductCard } from "./ProductCard";
+
+IMPORTANTE: en el momento que separe los componentes ya no podré usar esta forma tan abrupta de asignar propiedades,que ya habiamos dicho que estaba incorrecta:
+
+ProductCard.Title = ProductTitle;
+ProductCard.Image = ProductImage;
+ProductCard.Buttons = ProductButtons;
+
+Me dará un error que no puede acceder a  ProductButtons before initialization.
+Lo veremos en la siguiente clase.Además el componente debería quedar limpio,y realizar eso ahi rompe con el concepto de abstracción.
+
+				VIDEO 66 ASIGNAR COMPONENTES A OTRO COMPONENTE
+
+Ya no vamos a realizar nada más en el ProductCard.En su lugar lo vamos a hacer todo en el index.ts recién creado.
+
+En él ya no vamos a exportar a ProductCard directamente,sino que lo vamos a importar y renombrar la importación.
+
+En este punto es muy importante entender que en Javascript todo es un Objeto(a excepción de los primitivos).Asi pues ProductCard es un Objeto,y puedo usar Object.assign(objeto,{funcionalidad a asignar}) para asignarle o expandirle nuevas funcionalidades o propiedades en un objeto que va como segundo argumento del método:
+
+export const ProductCard = Object.assign(ProductCardHOC,{
+  Title: ProductTitle,
+  Buttons:ProductButtons,
+  Image: ProductImage });
+
+IMPORTANTE: fijate que éste último paso obligará a importar también,luego al final quedará todo asi:
+
+import { ProductCard as ProductCardHOC } from "./ProductCard";
+
+import { ProductButtons } from './ProductButtons';
+import { ProductTitle } from "./ProductTitle";
+import { ProductImage } from './ProductImage';
+
+export { ProductButtons } from "./ProductButtons";
+export { ProductTitle } from "./ProductTitle";
+export { ProductImage } from './ProductImage'
+
+export const ProductCard = Object.assign(ProductCardHOC, {
+  Title:ProductTitle,
+  Buttons:ProductButtons,
+  Image:ProductImage});
+
+
+/* exporto por default también,aunque no era necesario */
+export default ProductCard;
+
+Si bien han sido varios pasos todo ha sido bastante sencillo.Ahora bien,puedo ver que la interface de ProductCard ha sido inferida por TS,pero,¿que pasa si quisieramos hacerla?:
+
+
+export interface ProductCardHOCProps {
+  ({children,product}: ProductCardProps):ReactElement,
+  Title: ({ title }:{ title?: string }) => JSX.Element,
+  Image:({ img }: { img?: string }) => JSX.Element,
+  Buttons: () => JSX.Element
+}
+Si bien es un tanto compleja solo era ir copiando y pegando(fijate que declarar opcional una prop asi => prop?:string | undefined le puedo quitar el undefined pues ya le puse el ?.
+
+Ahora ya puedo saber más sobre ProductCard y además no podré incumplir el contrato con la interface:
+export const ProductCard:ProductCardHOCProps = Object.assign(ProductCardHOC, {
+  Title:ProductTitle,
+  Image:ProductImage,
+  Buttons:ProductButtons,
+});
+
+Dado que terminamos la sección hago el respaldo a GitHub.
+
 

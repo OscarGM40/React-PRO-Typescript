@@ -1,4 +1,5 @@
-import { ProductCard } from "../components/ProductCard";
+import { ProductButtons, ProductImage, ProductTitle } from '../components';
+import { ProductCard } from '../components';
 
 const product = {
   id:'1',
@@ -19,7 +20,17 @@ export const ShoppingPage = () => {
           flexDirection: "row",
         }}
       >
-        <ProductCard product={ product }/>
+       <ProductCard product={ product }>
+          <ProductCard.Image />
+          <ProductCard.Title title="Hola Compound"/>
+          <ProductCard.Buttons />
+        </ProductCard> 
+
+         <ProductCard product={ product }>
+          <ProductImage />
+          <ProductTitle />
+          <ProductButtons />
+        </ProductCard>
       </div>
     </div>
   );
