@@ -385,4 +385,166 @@ export const ProductCard:ProductCardHOCProps = Object.assign(ProductCardHOC, {
 
 Dado que terminamos la sección hago el respaldo a GitHub.
 
+			SECCION 6 PATRONES DE COMPONENTES - EXTENSIBLE STYLES -
 
+Esta sección es una continuación de la anterior.El objetivo es darle a otros usuarios o desarrolladores(consumidores) la capacidad de que puedan cambiar la apariencia del componente.
+
+En esta sección aprenderemos a extender la funcionalidad de nuestro componente añadiendo la posibilidad de interpretar clases de CSS y/o estilos en línea (inline styles)
+
+Para lograrlo necesitaremos realizar ciertas modificaciones a nuestras interfaces y componentes, pero al final del día, tendremos una componente personalizable.Increible este React.
+
+				VIDEO 71 CONTINUACIÓN - EXTENSIBLE STYLES -
+
+El extensible styles pattern se asegura que yo pueda pasarle clases o estilos a mis componentes prefabricados y que estos componentes prefabricados puedan interpretar estos estilos.
+Hay dos técnicas  que veremos,pasar un className y pasar style={{}}.
+
+NOTA:puedo observar que ahora mismo no lo puedo hacer al estar en TS,pero si podria desde JS:
+ <ProductCard.Image className="mokete" /> <- error
+
+					VIDEO 72 CUSTOM CLASSNAME
+
+Empezaremos por el más sencillo,que es className y por los componentes que físicamente importamos,que son estos:
+ 
+ <ProductCard product={ product }>
+      <ProductImage />
+      <ProductTitle />
+      <ProductButtons />
+   </ProductCard>
+
+De alguna manera tenemos que poder obtener props.className.De momento está asi:
+export const ProductCard = ({ children, product }: ProductCardProps) => {
+
+Fernando sugiere que la interfaz que da tipo a las props es mejor tenerla justo arriba del componente,y seguiré este consejo.Al final quedamos asi:
+
+export interface ProductCardProps {
+  product: Product;
+  children?: ReactElement | ReactElement[];
+  className?: string;
+}
+
+export const ProductCard = ({ children, product, className }: ProductCardProps) => {
+
+Y ya podriamos hacer algo como esto:
+   <div className={`${styles.productCard} ${className}`}>
+        {children}
+  </div>
+Sin embargo no las estoy pasando a los children,ellos aún siguen con el mismo problema.
+NOTA:anteriormente hicimos algo asi:
+
+export interface ProductCardHOCProps {
+  ({ children, product }: ProductCardProps ):JSX.Element,
+}
+Esto es similar a esto:
+export interface <name> {
+  ():boolean <- una funcion que devuelve un boolean
+Y esa función podría tener argumentos:
+ ( {name,username}):boolean <- funcion que recibe dos args y retorna un Boolean
+
+				VIDEO 73 CLASSNAME EN EL PRODUCTTITLE Y PRODUCTIMAGE
+
+Fijate que cuando son más de una Fernando sugiere crear una interface:
+
+interface ProductTitleProps {
+  className?: string;
+  title?: string;
+}
+export const ProductTitle = ({ title, className }: ProductTitleProps) => {
+
+Y también sugiere no exportarla hasta que no haga falta.Esta puede vivir ahi perfectamente. 
+
+interface ProductImageProps {
+  img?: string;
+  className?:string;
+}
+
+export const ProductImage = ({ img = "", className}:ProductImageProps) => {
+
+IMPORTANTE:fijate que fácil es dar un pequeño padding a una imagen y centrarla:
+.myClass {
+  padding:10px;
+  width: calc(100% - 20px);
+  border-radius:10px;
+} Todo está en el padding + width: calc(todo el ancho - padding total)
+
+					VIDEO 74 CLASSNAME EN PRODUCT-BUTTONS
+
+Este elemento es un tanto más complejo,pues tiene otros dentro:
+  return (
+    <div className={styles.buttonsContainer}>
+      <button className={styles.buttonMinus} onClick={() => increaseBy(-1)}>
+        -
+      </button>
+
+      <div className={styles.countLabel}> {counter} </div>
+
+      <button className={styles.buttonAdd} onClick={() => increaseBy(+1)}>
+        +
+      </button>
+    </div>
+
+Tendré que saber para quien va la clase...
+
+NOTA:fijate que para cambiar el color del borde de los botones ya tienen un borde,luego simplemente uso border-color:
+.custom-buttons button,
+.custom-buttons div
+{
+  color: white;
+  border-color: white;
+}
+Realmente era igual de sencillo,pero observa que fue muy importante apuntar al elemnto padre de este grupo de etiquetas y ya luego por css voy entrando:
+ return (
+    <div className={`${styles.buttonsContainer} ${className}`}> <- al contenedor
+Si hubiera entrado más no podria estilizar a los ascendentes.
+
+					VIDEO 75 INTERFACES FALTANTES
+
+Fijate que realmente no necesitabamos desestructurar las props aqui:
+
+export interface ProductCardHOCProps {
+  ({children,product}: ProductCardProps):ReactElement,
+  Title: (props: ProductTitleProps) => JSX.Element,
+  Image:( props : ProductImageProps) => JSX.Element,
+  Buttons: (props:ProductButtonsProps) => JSX.Element
+}
+Incluso la primera función tampoco es necesario desestructurar nada,podria usar:
+(props:ProductCardProps):ReactElement
+
+Fernando comenta que es buena idea ordenar las propiedades y métodos en ascendente(f1 y > y as),separando primero propiedades y despues métodos.Sea como sea debo empezar a ordenar el código.
+Aún nos quedó poder pasar estilos en linea con style,si trato de pasar uno dará error.
+NOTA: usar trafce en TS para generar una interfaz+componente.
+						
+					VIDEO 76 REACT CSS-PROPERTIES
+
+De aqui en adelante es practicamente lo mismo,salvo que en vez de className será style.Fijate que no es de tipo string más,sino que es de tipo React.CSSProperties(esto lo puedo ver como siempre haciendo hover en un style):
+
+Asi pues habrá que ir por cada interfaz agregando este style?:CSSProperties:
+
+export interface ProductCardProps {
+  product: Product;
+  children?: ReactElement | ReactElement[];
+  className?: string;
+  style?: React.CSSProperties;
+}
+
+NOTA:recuerda que desde la v17 tengo visión sobre el objeto global React en cualquier lado.Puedo usar React.CSSProperties y no usar tantas importaciones.
+
+Mando esta nueva prop:
+export const ProductCard = ({ children, product, className,style }: ProductCardProps) => {
+
+Y ahora fijate,de nuevo tendré que decidir donde recibirlo,en este ejemplo usaremos justo el mismo tag que recibe a className para hacer lo mismo pero con style:
+      <div 
+        className={`${styles.productCard} ${className}`}
+        style={style} >
+        ...
+
+Lo mismo para todos.Puedo observar que implementar el patrón Extensible Styles pattern es bastante sencillo.
+ATAJOS VSCODE: ALT+1 | 2 o 3 cambiar entre pestañas
+Dividir archivos: CTRL+<> o CTRL+/
+Cambiar entre archivos divididos: CTRL+Number
+Recuerda seleccionar con SIFT+CTRL+ArroowKeys 
+REcuerda CTRL+f busca en el archivo-  CTRL+H busca y reemplaza en el archivo.Muy útiles CTRL+ H o CTRL+SHIFT+H
+CTRL+SHIFT+o va a las variables o funciones(muy útil,tu)
+CTRL+SHIFT+. hace lo mismo,pero plegado,es aun mejor
+CTRL+P,despues':' para seleccionar linea
+
+Hago el respaldo,dejandolo en una rama extensible-styles.
