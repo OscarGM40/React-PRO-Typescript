@@ -1,17 +1,38 @@
-import { ProductButtons, ProductImage, ProductTitle } from '../components';
-import { ProductCard } from '../components';
+import { useState } from "react";
+import { ProductButtons, ProductImage, ProductTitle } from "../components";
+import { ProductCard } from "../components";
+import { onChangeArgs, Product } from "../interfaces/interfaces";
 
-import '../styles/custom-styles.css';
+import "../styles/custom-styles.css";
 
+const product1 = {
+  id: "1",
+  title: "Coffee Mug - Card",
+  img: "coffee-mug.png",
+};
 
-const product = {
-  id:'1',
-  title:'Coffee Mug - Card',
-  img:'https://images.unsplash.com/photo-1518791841217-8f162f1e1131?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=crop&w=800&q=60'
+const product2 = {
+  id: "2",
+  title: "Coffee Mug - Meme",
+  img: "coffee-mug2.png",
+};
 
+const products: Product[] = [product1, product2];
+
+interface ProductInCart extends Product {
+  count: number;
 }
 
 export const ShoppingPage = () => {
+  // el state luce asi: { '1': { ...product1, count:10}, '2': { ...product1, count:10} }
+  const [shoppingCart, setShoppingCart] = useState<{
+    [key: string]: ProductInCart;
+  }>({});
+
+  const onProductCountChange = ({count,product}:{count:number,product:Product}) => {
+    console.log("onProductCountChange", {count,product});
+  };
+
   return (
     <div>
       <h1>Shopping Store</h1>
@@ -23,7 +44,36 @@ export const ShoppingPage = () => {
           flexDirection: "row",
         }}
       >
-        <ProductCard product={product} className="bg-dark">
+        {products.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            className="bg-dark"
+            onChange={ (evento) => onProductCountChange(evento)}
+          >
+            <ProductImage className="custom-image" />
+            <ProductTitle className="text-white text-custom" />
+            <ProductButtons className="custom-buttons" />
+          </ProductCard>
+        ))}
+
+        <div className="shopping-cart">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              className="bg-dark"
+              style={{ width: "120px" }}
+              onChange={() => onProductCountChange()}
+            >
+              <ProductImage className="custom-image" />
+              <ProductButtons className="custom-buttons" />
+            </ProductCard>
+          ))}
+        </div>
+
+        {/* forma sin control de propiedades secciones 5 y 6 */}
+        {/*   <ProductCard product={product1} className="bg-dark">
           <ProductCard.Image className="custom-image" />
           <ProductCard.Title
             title="Hola Compound"
@@ -32,13 +82,13 @@ export const ShoppingPage = () => {
           <ProductCard.Buttons className="custom-buttons" />
         </ProductCard>
 
-        <ProductCard product={product} className="bg-dark">
+        <ProductCard product={product2} className="bg-dark">
           <ProductImage className="custom-image" />
           <ProductTitle className="text-white text-custom" />
           <ProductButtons className="custom-buttons" />
         </ProductCard>
 
-        <ProductCard product={product} style={{
+        <ProductCard product={product1} style={{
           backgroundColor: "#70D1f8",
         }} >
           <ProductImage style={{
@@ -53,8 +103,7 @@ export const ShoppingPage = () => {
             color: "#ecb4b4",
           }}/>
           <ProductButtons />
-        </ProductCard>
-
+        </ProductCard> */}
       </div>
     </div>
   );

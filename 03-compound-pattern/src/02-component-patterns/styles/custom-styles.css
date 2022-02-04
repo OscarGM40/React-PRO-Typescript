@@ -8,20 +8,26 @@
 }
 
 .text-custom {
+  font-style: italic;
   font-weight: 300;
   letter-spacing: 3px;
-  font-style: italic;
 }
 
 .custom-image {
+  border-radius: 20px;
   padding: 10px;
   width: calc(100% - 20px); /* 20px is the padding */
-  border-radius: 20px;
 }
 
 .custom-buttons button,
 .custom-buttons div
 {
-  color: white;
   border-color: white;
+  color: white;
+}
+
+.shopping-cart {
+  position: fixed;
+  right: 10px;
+  top: 0;
 }

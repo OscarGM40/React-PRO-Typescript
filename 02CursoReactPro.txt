@@ -547,4 +547,218 @@ CTRL+SHIFT+o va a las variables o funciones(muy útil,tu)
 CTRL+SHIFT+. hace lo mismo,pero plegado,es aun mejor
 CTRL+P,despues':' para seleccionar linea
 
-Hago el respaldo,dejandolo en una rama extensible-styles.
+Hago el respaldo,dejandolo en una rama extensible-styles y vuelvo a develop.
+
+			SECCION 07 CONTROL PROPS - PATRONES DE COMPONENTES
+
+Este patrón es muy usado,y ya lo he usado sin darme cuenta(controlled components).Cuando en un input le pongo un value y un onChanges ya lo estoy usando.
+Al pasar a un componente controlado es la función la que toma el control,y al redibujar React el input,la que le cambiará el valor.
+Como su nombre indica Control Props son propiedades de control que permiten a nuestros consumidores saber en que momento cambia y también poder establecer un valor.
+
+En esta sección aprenderemos a darle el control a nuestro usuario o compañero de trabajo sobre las propiedades y estado de nuestro componente, usualmente este patrón es el que se utiliza de manera tradicional en formularios, es decir:
+
+<input
+    value={  algún valor de solo lectura }
+    onChange={ alguna función que cambia el valor }
+/>
+Este patrón es el que implementaremos a continuación
+
+			VIDEO 82 PROBLEMA Y NECESIDAD DEL CONTROL DE PROPIEDADES
+
+Vamos a crear otra tarjeta,mucho más pequeña,que simule el carrito de compras.Fijtate que si sumo una unidad en la thumbnail no se refleja en la card principal y viceversa,pero deberían,ya que son dos Card(con diferentes tamaños) apuntando al mismo producto,al fin y al cabo.
+
+Este patrón es lo mismo que cuando un <input value={value} onChange={...}>,pero ahora lo quiero en una Card(en un par de ellas realmente).
+
+Puedo controlar lo que quiera,la cantidad de clicks,la cantidad de artículos,lo que yo quiera que regrese.Necesitaré una función que controle esto.
+
+Muchos componentes previamente configurados y estilizados implementan este patrón
+
+					VIDEO 83 ESTADO DEL CARRITO DE COMPRAS
+
+De alguna manera tenemos que mantener los componentes sincronizados(éste es el problema básicamente).
+
+NOTA:dado que un useState permite albergar cualquier cosa hay que decidir si quiero un objeto o un arreglo.Fernando aclara que es mejor usar un objeto(al estilo de un initialState),y ya dentro cualquier propiedad puede ser un arreglo,otro objeto,incluso una función.Puedo observar que es un acierto esa decisión.
+
+Nuestro shoppingCart va a ser un objeto cuyas llaves van a ser los ids de los productos y ese id apunta a un objeto con el producto y la cantidad del mismo:
+
+  const [shoppingCart, setShoppingCart] = useState({
+    '1': { ...product1, count:10},
+    '2': { ...product1, count:10},
+//    '3': { ...product1, count:0}, // si la count es 0 no va a existir
+  });
+
+Mientras count sea 0 no va a ser persistido en el carrito.
+NOTA: fijate que el spread va a esparcir las propiedades resultando en 1:{},2:{}.Diferente habría sido usar { {...product},count:10}.Importante ver ...spread contra {...spread} 
+
+Aqui vamos a mezclar varios conceptos interesantes.Lo primero es que el value de as keys de este objeto va a ser el Product + la nueva propiedad count luego:
+
+interface ProductInCart extends Product {
+  count: number;
+} 
+Esto es el value de cada '1','2'.Ahora para tipar el useState vamos a usar 
+const [shoppingCart, setShoppingCart] = useState<{ [key:string]:ProductInCart}>
+
+Basicamente esto se traduce como: el tipo es un objecto que tendrá cualquier cantidad de llaves,las cuales devolverán un ProductInCart(es decir que es { "":ProductInCart}
+Una vez tipado el state no necesito inicializarlo,pues TS ya sabe como va a lucirObserva la importancia de controlar las data structures.
+
+			VIDEO 84 DISPARAR FUNCION AL CAMBIAR ESTADO
+
+Fijate que el evento en que cambia el estado debe ser el onClick sobre el botón,el cual lo controlo con la función increaseBy que ha su vez controla el setCounter,todo esto lo refactorizamos a un customHook:
+
+export const useProduct = (initialValue: number) => {
+  
+  const [ counter, setCounter ] = useState(initialValue);
+
+  const increaseBy = (value: number) => {
+    setCounter(prev => Math.max(prev + value, 0));
+  }
+
+  return {
+    counter,
+    increaseBy
+  }
+
+}
+
+Normalmente la función onChange luce asi:
+onChange= { (e) => setCounter(e.target.value) }
+UNO: Fijate que en un <input> será un SyntheticEvent de HTMl,si,pero no tiene porque ser un evento de HTML,puede ser cualquier evento.
+DOS:despues se llama a una función cualquiera,pasandole args o no.Bien,con esto en mente creamos una simple función y la llamamos en el div del carrito:
+
+ const onProductCountChange = () => {
+    console.log("onProductCountChange");
+  }
+
+   <div className="shopping-cart">
+     <ProductCard
+      product={product2}
+      className="bg-dark"
+      style={{ width: "120px" }}
+      onChange={() => onProductCountChange()} 
+
+Fijate que interesante.El onChange da error porque no está definido.Hagamoslo.De momento simplemente va a ser una funcion asi () => void,aunque será más compleja.Y fijate que se la paso al hook como argumento,que es lo que necesitabamos:
+
+export interface ProductCardProps {
+  product: Product;
+  children?: ReactElement | ReactElement[];
+  className?: string;
+  style?: CSSProperties;
+  onChange?: () => void;
+}
+
+export const ProductCard = ({ children, product, className,style,onChange }: ProductCardProps) => {
+
+const { counter, increaseBy } = useProduct(0,onChange);
+Obviamente,tengo que recibirlo en el hook,de momento hagamoslo simple:
+
+export const useProduct = (initialValue: number, onChange?:()=>void)
+
+Y llamo a la función cuando cambie el counter:
+ const increaseBy = (value: number) => {
+    setCounter(prev => Math.max(prev + value, 0));
+    onChange && onChange();
+  }
+NOTA: fijate que la función puede ser null | undefined y debo arrastar hasta aquiel optional operator,simplement comprueba con un && que exista su referencia.
+
+Resumen:defino una funcion custom donde quiera,la mando a donde necesite,y la llamo.En TS habrá que tener cuidado con los types.
+Al final quedó así:
+      {products.map((product) => (
+          <ProductCard
+            key={product.id}
+            product={product}
+            className="bg-dark"
+            onChange={onProductCountChange}
+          >
+            <ProductImage className="custom-image" />
+            <ProductTitle className="text-white text-custom" />
+            <ProductButtons className="custom-buttons" />
+          </ProductCard>
+        ))}
+
+        <div className="shopping-cart">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              className="bg-dark"
+              style={{ width: "120px" }}
+              onChange={onProductCountChange}
+            >
+              <ProductImage className="custom-image" />
+              <ProductButtons className="custom-buttons" />
+            </ProductCard>
+          ))}
+        </div>
+
+Fijate que necesito varias cosas,necesito saber que articulo llama a la función y la cantidad.Pero todos estan enlazados a la misma función.Genial.
+
+				VIDEO 85 EMITIR ARGUMENTOS EN NUESTRO EVENTO
+
+Dado que necesitaremos argumentos no puedo usar 'point-free style'Además,vamos a emitir más de un dato.Habrá que tiparla:
+
+ onChange?: (product:Product,count:number) => void; <- recuerda que dos argumentos ya es mejor usar una interfaz
+
+export interface onChangeArgs {
+  product: Product;
+  count: number;
+}
+
+Asi que desde ya es de tipo onChange?:(args:onChangeArgs)=>void.Además,de nuevo,el hook va a recibir varios argumentos,asi que mejor usamos un objeto(fijate que también vamos a mandar el producto:
+
+export const ProductCard = ({ children, product, className,style,onChange }: ProductCardProps) => {
+
+  const { counter, increaseBy } = useProduct({
+    product,
+    onChange,
+    initialValue:0,
+    });
+
+
+interface useProductArgs {
+  product: Product;
+  onChange?: (args: onChangeArgs) => void;
+  initialValue:number
+}
+
+Obviamente esto ya no va a funcionar:
+  onChange && onChange();
+onChange: (args: onChangeArgs) => void
+Expected 1 arguments, but got 0.ts(2554)
+Nos falta el objeto args de arriba
+
+  const increaseBy = (value: number) => {
+    const newValue = Math.max(counter+value,0)
+    setCounter(newValue);
+
+    onChange && onChange({
+      product,
+      count: newValue
+    });
+  }
+Desde ahora cuando incremente el contador vamos a actualizar el estado y si la función existe la emito con esos valores.Obviamente ahora tendremos que recibir bien los dos argumentos:
+  
+const onProductCountChange = (evento:any) => {
+    console.log(evento);
+  };
+
+  onChange={ (evento) => onProductCountChange(evento)}
+
+Y obviamente mucho mejor si desestructuro:
+ const onProductCountChange = ({count,product}:{count:number,product:Product}) => {
+    console.log("onProductCountChange", {count,product});
+  };
+
+Genial.Fijate que de nuevo puedo volver a usar programación tácita o point free-style.
+NOTA: Pero... pero el objetivo aquí es hacer uso de esta estrategia para crear componentes que no saben si vivieran con Redux o Context... imagina que estás creando tu paquete reutilizable para varios proyectos en React, y tu empresa necesita usar esos componentes en multiples aplicaciones... unos usarán redux, otros context, otros mediante props... pero el comportamiento de tus componentes en ese paquete no deperían depender de componentes externos para funcionar (a menos que explícitamente sea una dependencia de los mismos)
+
+
+
+La idea no es que esto reemplace Redux, no... la idea es que aprendamos como estructurar componentes de diferentes formas... puede que este patrón sea complicado y poco a poco lo seguiremos elevando hasta llevarlo a un paquete desplegable a NPM, te aconsejaría que vuelvas a ver el video otra vez y otra vez hasta que tenga esto un poco más de sentido.
+
+					VIDEO 86 CREAR CARRITO DE COMPRAS
+
+
+
+
+
+
