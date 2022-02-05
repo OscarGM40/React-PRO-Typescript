@@ -757,8 +757,101 @@ La idea no es que esto reemplace Redux, no... la idea es que aprendamos como est
 
 					VIDEO 86 CREAR CARRITO DE COMPRAS
 
+Fijate que interesante.Si yo trato de imprimir el getter de un useState:
+<div>
+  <code>
+    {JSON.stringify(shoppingCart, null, 5)}
+  </code>
+</div>
 
+ Y trato de cambiar el state de ese useState mediante reasignación veré que no viene nada.Siempre se debe de cambiar el state mediante el setter,luego no puedo hacer esto:
 
+shoppingCart[product.id] = { ...product, count }; <- no puedo usar el getter
 
+/* la solucion es bien fácil,y es creando una copia */
+const newShoppingCart = { ...shoppingCart };
+newShoppingCart[product.id] = { ...product, count };
+ if(count === 0){
+      delete newShoppingCart[product.id];
+    }
+setShoppingCart(newShoppingCart);
+
+Recuerda que deberiamos borrar el producto si count es 0
+
+				VIDEO 87 MOSTRAR ITEMS DEL CARRITO DE COMPRAS
+
+Es momento de mostrar los items del carrito de compras en base a las cards principales.
+LLegados a este punto es importante ver las diferencias entre usar Object.entries():[] que devolverá un array con las entradas y usar Object.keys u Object.values:
+
+{ Object.entries(shoppingCart).map( ([id,product]) => si uso entries me devuelven un arreglo,luego puedo seguir con product[id].img,etc...
+
+ { Object.values(shoppingCart).map((product) => ( <- dado que cada valor es un objeto product será el object.
+
+					VIDEO 88 MANTENER SINCRONIZADOS LOS VALORES
+
+Aqui viene la parte interesante.Fijate que realmente debería crear una propiedad value junto a donde vaya el onChange:
+<ProductCard
+    key={product.id}
+    product={product}
+    className="bg-dark"
+    style={{ width: "120px" }}
+    onChange={(evento) => onProductCountChange(evento) }
+    value={product.count}
+  >
+No tiene mucho sentido mandarlo en otro lado,aunque funcione.Esto me obligará a declararlo en la interfaz y mandarlo al customHook,asi que la declaro y la mando al hook.Fijate que debería ser opcional:
+
+export interface ProductCardProps {
+  product: Product;
+  children?: ReactElement | ReactElement[];
+  className?: string;
+  style?: CSSProperties;
+  onChange?: (args:onChangeArgs) => void;
+  value?:number;
+}
+
+export const ProductCard = ({ children, product, className,style,onChange,value }: ProductCardProps) => {
+
+  const { counter, increaseBy } = useProduct({
+    product,
+    onChange,
+    initialValue:0,
+    value
+    });
+
+Y ahora lo recibo en el hook, y disparo el setter en un efecto:
+
+useEffect(() => {;
+   setCounter(value);    
+}, [value]);
+
+		VIDEO 89 SINCRONIZAR DESDE EL CARRITO A LAS TARJETAS PRINCIPALES
+
+Falta terminar de ajustar todo.Fijate que ambos componentes tienen que terminar con el onChange y el value,como si fueran un input.luego simplemente hago eso:
+
+ {products.map((product) => (
+ <ProductCard
+   key={product.id}
+   product={product}
+   className="bg-dark"
+   onChange={(evento) => onProductCountChange(evento)}
+   value={shoppingCart[product.id]?.count} >
+
+Y el otro,las cards del carrito queda asi:
+ <div className="shopping-cart">
+   {Object.values(shoppingCart).map((product) => (
+     <ProductCard
+       key={product.id}
+       product={product}
+       className="bg-dark"
+       style={{ width: "120px" }}
+       onChange={(e) => onProductCountChange(e) }
+       value={product.count}
+     >
+Ya está terminado,y fijate en que el patrón consistió en usar onChange+value donde yo quiera,y de esta forma controlar esos componentes.Por último nuestro componente tiene mucha lógica,mejor usamos un customHook para abstraerla de alli.Genial.
+
+NOTA: realmente aún falta algo,y es que el value no controla totalmente el state,pues hicimos un effect en el que si cambia usamos el setter con lo que es ese useState el que aún sigue teniendo el control y debe ser el value.
+Cambiaremos el primer hook en la siguiente clase para cambiar el control.
+
+						VIDEO 90 CONTROL PROPS
 
 

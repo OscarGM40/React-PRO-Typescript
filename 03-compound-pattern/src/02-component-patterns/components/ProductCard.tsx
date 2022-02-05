@@ -19,14 +19,15 @@ export interface ProductCardProps {
   className?: string;
   style?: CSSProperties;
   onChange?: (args:onChangeArgs) => void;
+  value?:number;
 }
 
-export const ProductCard = ({ children, product, className,style,onChange }: ProductCardProps) => {
+export const ProductCard = ({ children, product, className,style,onChange,value }: ProductCardProps) => {
 
   const { counter, increaseBy } = useProduct({
     product,
     onChange,
-    initialValue:0,
+    value
     });
 
   return (

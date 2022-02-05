@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { ProductButtons, ProductImage, ProductTitle } from "../components";
 import { ProductCard } from "../components";
-import { onChangeArgs, Product } from "../interfaces/interfaces";
+import { Product } from "../interfaces/interfaces";
 
 import "../styles/custom-styles.css";
 
@@ -24,14 +24,35 @@ interface ProductInCart extends Product {
 }
 
 export const ShoppingPage = () => {
+
   // el state luce asi: { '1': { ...product1, count:10}, '2': { ...product1, count:10} }
   const [shoppingCart, setShoppingCart] = useState<{
     [key: string]: ProductInCart;
   }>({});
 
-  const onProductCountChange = ({count,product}:{count:number,product:Product}) => {
-    console.log("onProductCountChange", {count,product});
+  const onProductCountChange = ({
+    count,
+    product,
+  }: {
+    count: number;
+    product: Product;
+  }) => {
+    // console.log("onProductCountChange", { count, product });
+
+    /* recuerda que no puedo hacer esto pues muto el useState*/
+    // NOTA:la única forma de mutar debe ser mediante el setter
+    //  shoppingCart[product.id] = { ...product, count };
+
+    /* la solucion es bien fácil,y es creando una copia */
+    const newShoppingCart = { ...shoppingCart };
+
+    newShoppingCart[product.id] = { ...product, count };
+    if (count === 0) {
+      delete newShoppingCart[product.id];
+    }
+    setShoppingCart(newShoppingCart);
   };
+
 
   return (
     <div>
@@ -49,7 +70,8 @@ export const ShoppingPage = () => {
             key={product.id}
             product={product}
             className="bg-dark"
-            onChange={ (evento) => onProductCountChange(evento)}
+            onChange={(e) => onProductCountChange(e)}
+            value={shoppingCart[product.id]?.count}
           >
             <ProductImage className="custom-image" />
             <ProductTitle className="text-white text-custom" />
@@ -58,18 +80,29 @@ export const ShoppingPage = () => {
         ))}
 
         <div className="shopping-cart">
-          {products.map((product) => (
+          {Object.values(shoppingCart).map((product) => (
             <ProductCard
               key={product.id}
               product={product}
               className="bg-dark"
               style={{ width: "120px" }}
-              onChange={() => onProductCountChange()}
+              onChange={(e) => onProductCountChange(e) }
+              value={product.count}
             >
               <ProductImage className="custom-image" />
-              <ProductButtons className="custom-buttons" />
+              <ProductButtons
+                className="custom-buttons"
+                style={{
+                  display: "flex",
+                  justifyContent: "center",
+                }}
+              />
             </ProductCard>
           ))}
+        </div>
+
+        <div>
+          <code>{JSON.stringify(shoppingCart, null, 5)}</code>
         </div>
 
         {/* forma sin control de propiedades secciones 5 y 6 */}

@@ -6,7 +6,7 @@ export interface ProductButtonsProps{
   className?: string;
   style?: React.CSSProperties;
 }
-export const ProductButtons = ({className,style}:ProductButtonsProps) => {
+export const ProductButtons = ({ className, style }:ProductButtonsProps) => {
   const { counter, increaseBy } = useContext(ProductContext);
 
   return (
