@@ -28,6 +28,17 @@ export const useShoppingCart = () => {
       const { [product.id]: toDelete, ...newShoppingCart } = prevShoppingCart;
       return newShoppingCart;
     });
+    /* forma con doble control<- comentar el primer setter */
+/*     setShoppingCart((prevShoppingCart) => {
+      if(count === 0) {
+        const { [product.id]: toDelete, ...newShoppingCart } = prevShoppingCart;
+        return newShoppingCart;
+      }
+      return {
+        ...prevShoppingCart,
+        [product.id]: { ...product, count },
+      };
+    }); */
   };
 
   return {
