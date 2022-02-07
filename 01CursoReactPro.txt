@@ -234,5 +234,623 @@ Por último, y pensando en reusar la animabilidad cambiamos el nombre y tipo:
 
 							VIDEO 19 USE-REDUCER
 
+ El useReducer se usa para lo mismo que el useState,sólo que normalmente se usa cuando el estado es un poco más complejo y/o cuando hay cambios que afectan a varias cosas de manera simultánea.
 
+Para implementar el hook useReducer necesitaré un initialState y una función pura reductora.A cambio se me devolverá el interaccionador con las acciones o dispatch y el estado:
+ const [state, dispatch] = useReducer(counterReducer, INITIAL_STATE);
+
+
+Fijate que en TS debería crear una interface para tipar el initialState.Y fijate en este estado inicial que guarda el estado anterior:
+
+interface CounterState {
+  counter: number;
+  previous: number;
+  changes: number;
+}
+
+const INITIAL_STATE:CounterState = {
+    counter: 0,
+    previous: 0,
+    changes: 0,
+}
+
+Guardar el previous state es algo muy común cuando se quiere dejar al usuario la posibilidad de volver al estado anterior.
+
+				VIDEO 20 FUNCION PURA - XXXREDUCER
+
+Fijate que en la actualidad esta aproximación para tipar todas las posibles acciones es de lo mejorcito:
+
+type Action = 
+  | { type: 'increaseBy', payload: {value: number}}
+  | { type: 'decrementBy', payload: {value: number}}
+  | { type: 'reset' } 
+
+Recuerda que una función pura reductora es una función pura que toma dos argumentos,el estado anterior y la acción y devuelve el nuevo estado:
+
+const counterReducer = (state:CounterState, action:Action) => {
+  switch (action.type) {
+    case 'increaseBy':
+      return {
+        ...state,
+        counter: state.counter + action.payload.value,
+        previous: state.counter,
+        changes: state.changes + 1,
+      }
+    case 'decrementBy':
+      return {
+        ...state,
+        counter: state.counter - action.payload.value,
+        previous: state.counter,
+        changes: state.changes + 1,
+      }
+    case 'reset':
+      return {
+        ...state,
+        counter: 0,
+        previous: 0,
+        changes: 0,
+      }
+    default:
+      return state;
+  }
+}
+Disparo las acciones que quiere Fernando,etc:
+  
+const handleIncrease = (value:number) => {
+    dispatch({ type: 'increaseBy', payload: {value} });
+  }
+
+const handleDecrease = (value:number) => {
+   dispatch({ type: 'decrementBy', payload: {value} });
+  }
+De nuevo es buena idea dejar el useState para cosas simples y usar un reducer en cuanto vea que es necesario.
+
+				VIDEO 22 SEPARAR ACCIONES,INTERFACES Y REDUCER
+
+En este punto tenemos todo en un mismo archivo,esto es una mala práctica.
+Debería de refactorizar siguiendo a Angular,creando un folder a especie de módulo.En este folder puedo crear las carpetas actions,interfaces y reducer y archivos con extensión .ts(pues no usan JSX).Realmente es sencillo en este punto.
+
+En el siguiente video veré los ActionsCreators o creadores de acciones.Estos generadores nacieron porque si yo ahora quisiera hacer un cambio muy sutil(como cambiar increaseBy por increaseByNumber) tendré que cambiar cosas en varios archivos(en el actions.ts,en el reducer,en cada dispatch...).
+Sería mejor tener centralizada la creación de acciones.
+NOTA:todo esto se refiere a que no debo escribir los nombres de las acciones en duro:   dispatch({ type: 'increaseBy').Obviamente,es mejor inferir ese valor desde otro archivo.
+
+						VIDEO 23 ACTION CREATORS
+
+Doc: https://read.reduxbook.com/markdown/part1/04-action-creators.html
+Es momento de cambiar como estoy infiriendo los tipos de las acciones,y no hacerlo directamente.
+
+IMPORTANTE: una actionCreator es una función pura.Este concepto de implementar las actions types mediante action Creators viene sugerido desde el patrón redux
+
+NOTA:usualmente se acostumbra a anteponerle 'do' a estas actionCreators.
+
+Con todo esto en mente creo las funciones actionCreators que tienen que devolver un objeto de tipo Action.Si llevan payload lo recibirań por argumento:
+
+export const doReset = ():Action => ({
+    type: 'reset',
+})
+
+export const doIncreaseBy = (value: number):Action => ({
+    type: 'increaseBy',
+    payload: { value },
+})
+* Fijate que la doc oficial no retorna un objeto directamente con ({}):
+export const doIncreaseBy = (value:number):Action => {
+  return { ... } } .
+Es en el return donde lo devuelve,pero puedo acortar ese código.
+
+Lo bueno de todo esto es que ahora el dispatch llamará a estas actionCreators de una forma muy sencilla:
+
+Cambiar esto: 
+ const handleIncrease = (value:number) => {
+    dispatch({ type: 'increaseBy', payload: {value} });
+  }
+por:
+  const handleIncrease = (value:number) => {
+    dispatch(doIncreaseBy(value));
+  }
+
+Queda mucho más limpio:
+  const handleIncrease = (value:number) => {
+    dispatch(doIncreaseBy(value));
+  }
+
+Todo esto se debe acompañar con una enum o un Map para no introducir los strings en duro:
+
+export enum ActionsTypes {
+  INCREASE_BY = 'increaseBy',
+  DECREMENT_BY = 'decrementBy',
+  RESET = 'reset',
+}
+export type Action =
+  | { type:ActionsTypes.INCREASE_BY,payload:{ value: number } }
+  | { type:ActionsTypes.DECREMENT_BY,payload:{ value: number } }
+  | { type: ActionsTypes.RESET }  
+
+IMPORTANTE. cuando tengo muchas importaciones de esta forma:
+import { doIncreaseBy, doDecrementBy, doReset } from './actions/actions';
+Es buena idea importar todo bajo un alias:
+
+import * as actionsCreators from './actions/actions';
+
+Y luego usar todo mediante este objeto:
+dispatch( actionsCreators.doIncreaseBy(value) )
+
+Quizás con 3 aún no se ve muy bien las ventajas pero fijate cuando tienes 10 o 15 que realmente es una buena idea.
+
+						SECCION 03 INICIO DEL PROYECTO
+
+Esta sección es totalmente opcional, el objetivo es crear una aplicación de React con TypeScript que nos sirva para las próximas secciones.
+
+Aquí no veremos nada nuevo de React, crearemos rutas y dejaremos todo listo para las secciones que vienen.
+
+				VIDEO 27-28 INICIO PROYECTO Y REACT-ROUTER V6
+
+Creo un nuevo proyecto con create-react-app <name> --template typescript.Limpio un poco lo necesario y copio los estilos del gist de Fernando.
+Fernando enseñara el lazy load tanto con la version 6 como con el 5 del router:
+npm i react-router-dom@6 | 5
+
+Recuerda: redo es con CTRL+r.
+Creamos tres simples rutas:
+
+  <BrowserRouter>
+      <div className="main-layout">
+        <nav>
+          <img src={logo} alt="" />
+          <ul>
+            <li>
+              <NavLink 
+                to="/"
+                className={({isActive}) => isActive ? "nav-active":""}>Home</NavLink>
+            </li>
+            <li>
+              <NavLink 
+                to="/about"
+                className={({isActive}) => isActive ? "nav-active":""}>About</NavLink>
+            </li>
+            <li>
+              <NavLink 
+                to="/users"
+                className={({isActive}) => isActive ? "nav-active":""}>Users</NavLink>
+            </li>
+          </ul>
+        </nav>
+
+        <Routes>
+          <Route path="/" element={ <h1>Home Page</h1> } />
+          <Route path="/about" element={ <h1>About Page</h1> } />
+          <Route path="/users" element={ <h1>Users Page</h1> } />
+          <Route path="/*" element={ <Navigate to="/home" replace /> } />
+        </Routes>
+      </div>
+    </BrowserRouter>
+
+En el siguiente video hace lo mismo pero con la versión 5.
+
+NOTA:desde react-router-dom v6 se incorporan por defecto los archivos de definición de tipos para Typescript,con lo que no tengo que instalarlos,algo que si tengo que hacer con la v5(npm i @types/react-router-dom).
+
+Este es un buen momento para hacer una tag-release
+
+				SECCION 04 - LAZY LOAD - CHUNKS - REACT ROUTER V6 | V5
+
+Si tuviera una app de React muy grande debo implementar el lazy load y cargar módulos bajo demanda.¿Para qué cargar toda la app si el usuario primero debe pasar por la autenticación?.
+
+Veremos varias técnicas para realizar esto(cargar por módulos,cargar todo por lazy-load).Es muy recomendable cargar mediante módulos y no cargar todo por lazy-load(ya que se hace una petición al backend y éste regresa ese chunk).
+
+Veremos como cambiar los nombres a los chunks(lo cual es muy útil al trabajar con ServiceWorker y manejo del caché)
+
+Veremos lazy-load por componente y React Suspense también.
+
+En esta sección vamos a llevar nuestro sistema de rutas a otro nivel, el objetivo principal sera:
+1- Aplicar Lazy Load en cada Componente
+2- Aplicar Lazy Load por módulo
+
+La idea del módulo es que nos permita cargarlo y todas sus dependencias en conjunto.Es una sección fundamental.
+
+					VIDEO 35 PREPARAĆION DEL PROYECTO
+
+NOTA: dado que hubo muchos cambios en el routeer Fernando va a enseñar las dos versiones,ya que varias cosas como React Suspense cambiaron bastante.
+Pide hacer un fork del proyecto,yo lo haré con la tag-release y en ambas versiones.
+
+						VIDEO 36 RUTAS SIN LAZYLOAD
+
+Primeramente vamos a simular un simple módulo,al que llamaremos 01-lazyload,pero que simularia un módulo de ventas,articulos,productos,auth,...
+
+Creo los subfolders components y pages en ese módulo y tres componentes.Cambio todas las rutas del starter por estas tres.Fijate que hasta ahora no hemos usado lazyload por ningun lado.
+
+NOTA: fijate como debería crear los componentes con rafc y no con rafce,ya que asi puedo exportarlos en masa.En el mismo directorio module/pages creo un index y exporto todo(fijate que no tuve que importarlos primero,pero por qué??):
+
+export { LazyPage1 } from "./LazyPage1";
+export { LazyPage2 } from "./LazyPage2";
+export { LazyPage3 } from "./LazyPage3";
+
+Sea como sea ya puedo importarlos desde cualquier punto con un único import:
+import { LazyPage1, LazyPage2, LazyPage3 } from "../01-lazyload/pages/index";
+Y podría usar * as,pero no ahora.
+
+     <Route path="lazy1" element={ <LazyPage1 /> } />
+     <Route path="lazy2" element={ <LazyPage2 /> } />
+     <Route path="lazy3" element={ <LazyPage3 />} />
+
+Fernando recalca que podría cargar cada componente de manera perezosa,y que algunos devs lo hacen.Pero él prefiere cargar todo en secciones o módulos,cargando bloques un poco más grandes.
+
+			VIDEO 37 CREAR ARCHIVO DE RUTAS INDEPENDIENTES
+
+Antes que nada vamos a hacer otra rama por cli:
+git checkout -b <nombreRama>
+git add .
+git commit -m "mensaje"
+git push --set-upstream origin <nombreRama>
+
+git merge fusiona la rama especificada con la actual.Luego si quiero fusionar develop con esta nueva me coloco en develop y fusiono nuevaRama con develop(tengo que ir a la rama receptora de la otra rama que entrará).Practicar más esto.
+<git merge nuevaRama (estando en develop) fusiona nuevaRama con develop
+Fijate que git merge develop(estando en nuevaRama) es justo lo contrario.
+
+Volviendo al curso vamos a crear un archivo para crear las rutas.Dado que estoy en TS debo crear una interface:
+interface Routes {
+  to: string;
+  path: string;
+  Component: () => JSX.Element;
+  name: string;
+}
+
+export const routes:Routes[] = [
+  { 
+    to: '/lazy1',
+    path:'lazy1',
+    Component: LazyPage1,
+    name: 'Lazy-1',
+  },
+  { 
+    to: '/lazy2',
+    path:'lazy2',
+    Component: LazyPage2,
+    name: 'Lazy-2',
+  },
+  { 
+    to: '/lazy3',
+    path:'lazy3',
+    Component: LazyPage3,
+    name: 'Lazy-3',
+  },
+]
+Fijate que Componente no es un JSX.Element si no una función que lo devuelve.En React cada componente es un functional Component,una función que devuelve un Componente(luego Component: () => JSX.Element)
+De todas formas recuerda que todo esto lo puedo ver haciendo hover + CTRL y que me lo chive TS.
+
+Una vez con este archivo ya puedo hacer cosas tan interesantes como barrer ese arreglo y crear las rutas de forma dinámica:
+ <ul>
+  { routes.map((route) => (
+    <li key={route.to}>
+      <NavLink
+         to={route.to}
+         className={({ isActive }) => (isActive ? "nav-active" : "")}
+      >{route.name} </NavLink>
+    </li>
+  )) }
+</ul>
+
+NOTA:cuando sepa que voy a devolver JSX en el map puedo usar los ()
+ {array.map( (element) => () )}
+Cuando vaya Javascript no necesito esos () pero si los necesito si voy a devolver JSX.Interesante.
+
+IMPORTANTE: fijate que ya no puedo dejar el navigate a /lazy1 pues está en duro:
+
+  <Route path="/*" element={<Navigate to={routes[0].to} replace />} />
+En su lugar debo elegir una posicion del arreglo(y recuerda que replace:boolean es para que reemplace la ruta y no pueda ir hacia atrás el usuario a esa ruta inexistente dando para atrás(con lo que es realmente lo que quiero).
+
+IMPORTANTE: si en el arreglo no habría usado Component sino component me va a dar un error,pues un Componente de React no puede ir en minúsculas(y estoy diciendo que esa propiedad es de tipo () => JSX.Element.
+T
+engo dos opciones,o le llamo Component,Element,etc o al referenciarla la doy un alias y la capitalizo.Ejemplo(imaginando que usé component en vez de Component):
+{ routes.map( ({path, component:Component }) => (
+  <Route path={path}  element={ <Component /> } /> ) ) }
+Fernando comenta que no le gusta realizar un paso extra cuando puede usar perfectamente Component como nombre de la propiedad.
+
+					VIDEO 39 LAZYLOAD Y SUSPENSE
+
+Para poder usar lazyload hay que implementar el Suspense.Casi todo lo voy a hacer en el archivo de rutas.
+Tendré que usar el método lazy( () => JSX.Element>(factory: () => Promise<{
+    default: () => JSX.Element;
+}>) que carga bajo Promise un component y devuelve un  React.LazyExoticComponent<React.ComponentType<any>>.Básicamente importa en una callback un componente.Es exactamente igual que en Angular:
+
+const Lazy1 = lazy( () => import('../01-lazyload/pages/LazyPage1'));
+
+IMPORTANTE:puedo ver que me da un error mencionando varias veces el 'default'.Cualquier componente que use lazyload tiene que ser exportado por defecto obligatoriamente.
+
+NOTA:fijate que puedo exportarlo de ambas formas y que cada uno lo coga como quiera!.Y además,este error no lo habría visto en tiempo de ejecución si no fuera por Typescript:
+
+export const LazyPage1 = () => {
+  return <div>LazyPage 1</div>;
+};
+
+export default LazyPage1;
+
+Hago lo mismo con los otros dos.Fijate que ahora Component ya no va a cargar el JSX.Element si no éste LazyExoticComponent<() => Element>.Obviamente tengo que cambiar la interfaz.
+
+Type 'LazyExoticComponent<() => Element>' is not assignable to type '() => Element'.ts(2322)
+
+NOTA:si bien este elemento es de tipo LazyExoticComponent<() => JSX.Element> realmente me viene mejor ser flexible y dejar también que puede devolver un componente funcional normal:
+
+Component: LazyExoticComponent<() => JSX.Element> | (() => JSX.Element);
+
+Si miro bien estos dos tipos puedo ver que se repite () => JSX.Element así que puedo refactorizarlo un poco:
+
+type JSXComponent = () => JSX.Element;
+Component: LazyExoticComponent<JSXComponent> | JSXComponent;
+
+Y ahora queda más legible.Genial.
+NOTA:aún falta algo,puedo ver este error en la consola:
+
+react-dom.development.js:20349 Uncaught Error: A React component suspended while rendering, but no fallback UI was specified.
+Add a <Suspense fallback=...> component higher in the tree to provide a loading indicator or placeholder to display.
+
+Más o menos está diciendo que hay componentes en suspense,pero no estoy informando al usuario mediante una fallback por la UI.
+Incluso me está diciendo que tengo que usar el HOC <React.Suspense fallback=...> con la propiedad 'fallback'.Lo cual estaba claro.Muy prehistoric este react.
+
+Lo vamos a hacer en el componente Navigation,ya que es lo suficientemente alto para englobar toda la App:
+
+   <Suspense fallback={<div>Loading...</div>}>
+     <BrowserRouter>
+        ... 
+      </BrowserRouter>
+    </Suspense>
+
+IMPORTANTE: fallback perfectamente acepta un null(fallback={null}),pero normalmente se le pasa un componente personalizado.Si se le pasa un null simplemente parpadeará la pantalla en blanco,de ahi que se recomienda crear un spinner,loader,etc..
+NOTA;si voy a la pestaña Network veré como cargan los chunks 1,2 y 3 la primera vez que entre a cada módulo/componente y despues en sucesivas veces quedaron cacheados y no se cargan más.
+Suspense me permite mostrar un mensaje mientras se carga ese modulo.
+En el siguiente video vamos a renombrar los chunks,ya que sus nombres no son muy representativos y son muy volátiles.
+
+				VIDEO 40 CAMBIAR EL NOMBRE DE LOS CHUNKS
+
+Realmente es bastante sencillo.Antes del import en el método lazy debo crear un comentario con la siguiente sintaxis:
+
+const Lazy1 = lazy(() => import(/* webpackChunkName: "LazyPage1" */ '../01-lazyload/pages/LazyPage1'));
+
+const Lazy2 = lazy(() => import(/* webpackChunkName: "LazyPage2" */ '../01-lazyload/pages/LazyPage2'));
+
+const Lazy3 = lazy(() => import(/* webpackChunkName: "LazyPage3" */ '../01-lazyload/pages/LazyPage3'));
+Todo lo que ponga entre los parentesis del /* webpackChunkName: "" */ será el nombre del chunk
+
+Debo comprender que hasta ahora he echo un lazyload por componente.
+
+		VIDEO 41 NESTED LAZY LOAD - LAZY LOAD CON RUTAS ANIDADAS 
+
+Ahora si,vamos a ver el lazyLoad por módulos.Hay varias formas de hacer esto.
+Antes de nada vamos a crear otra rama(recuerda que debo hacer el commit para no perder los cambios en la rama actual).
+git add . && git commit <- recuerda no dejar cambios pendientes
+git checkout -b lazyload-v6-nested
+git add . && git commit -m ""
+git push --set-upstream origin <nuevaRama> <-cuando vaya a pushear le agrego un remoto
+
+Bien,veamos como realizar el lazyload por módulos.Todo empieza creando otro componente.En una aplicación normalmente tendré el módulo de auth(con el login + register) y despues un dashboard inicial.Este dashboard tendrá rutas hijas.
+
+En esta nueva rama creamos un componente,que llamaremos layout,pero simula este dashboard.Y además otro componente adicional a los tres anteriores.Fijate bien como queda ahora el routes.ts:
+
+const LazyLayout = lazy( () => import(/*webpackChunkName: "LazyLayout" */ '../01-lazyload/layout/LazyLayout') );
+
+export const routes: Routes[] = [
+  { 
+    to: '/lazyload/',
+    path:'lazylaod',
+    Component: LazyLayout,
+    name: 'Lazy-1',
+  },
+  { 
+    to: '/no-lazy',
+    path:'nolazy',
+    Component: NoLazy,
+    name: 'No Lazy',
+  },
+]
+Esto era suficiente con react Router v5 pero desde la versión 6 necesito especificar el path y el to de forma diferente(path usará /* como terminación,es decir usrará /ruta/* y el to usará una / al final:
+
+export const routes: Routes[] = [
+  { 
+    path:'/lazyload/*',
+    to: '/lazyload/',
+    Component: LazyLayout,
+    name: 'LazyLayout-Dashboard',
+  },
+
+Realmente no es complicado.Ahora ya simplemente dentro de este modulo cargo los componentes directamente,cuando y donde quiera,sin usar el método lazy:
+
+export const LazyLayout = () => {
+  return (
+    <div>
+      <h1>LazyLayout Page</h1>
+      <ul>
+        <li>
+          <NavLink to="lazy1">Lazy1</NavLink>
+        </li>
+        <li>
+          <NavLink to="lazy2">Lazy2</NavLink>
+        </li>
+        <li>
+          <NavLink to="lazy3">Lazy3</NavLink>
+        </li>
+      </ul>
+
+      <Routes>
+        <Route path="lazy1" element={<LazyPage1 />} />
+        <Route path="lazy2" element={<LazyPage2 />} />
+        <Route path="lazy3" element={<LazyPage3 />} />
+      </Routes>
+    </div>
+      <Routes>
+
+NOTA:Una pequeña ayuda para quienes les interesa, para mantener la ruta activa del navlink, ya que vi que el profe lo hizo en la v5 pero aqui se le escapo xd.
+  export const routes: IRoute[] = [
+    {
+        to: '/lazyload', //=> eliminar el / del final para que el navlink detecte la ruta activa
+        path: 'lazyload/*',
+
+También recomiendan crear un Componente llamado Outlet para las rutas hijas.
+
+				VIDEO 45 MISMO PROYECTO CON VERSION 5 DEL ROUTER
+
+Voy a crear el mismo proyecto de forma legacy,debido a los breaking changes.Usaré vite(veet):
+npm init vite@latest <proyectName> -- --template react-ts
+
+* Recuerda que esto crea una carpeta.
+Instalo la versión 5:
+npm i react-router-dom@^5
+NOTA:desde ya puedo ver que TS necesita los definition types,y que hasta la 6 tengo que instalarlos:
+npm i -D @types/react-router-dom
+
+Bien,en cuanto a las rutas hay que usar exact,activeClassName y Switch.En la 6 cambió a no usar exact,usar una callback con props.isActive y Routes:
+    <BrowserRouter>
+      <div className="main-layout">
+        <nav>
+          <img src={logo} alt="" />
+          <ul>
+            <li>
+              <NavLink 
+                to="/lazy1"
+                activeClassName="nav-active"
+                exact>Lazy1
+              </NavLink>
+            </li>
+            <li>
+              <NavLink 
+                to="/lazy2"
+                activeClassName="nav-active"
+                exact>Lazy2
+              </NavLink>
+            </li>
+            <li>
+              <NavLink 
+                to="/lazy3"
+                activeClassName="nav-active"
+                exact>Lazy3
+              </NavLink>
+            </li>
+          </ul>
+        </nav>
+
+        <Switch>
+          <Route path="/lazy1">
+            <LazyPage1 />
+          </Route>
+          <Route path="/lazy2">
+            <LazyPage2 />
+          </Route>
+          <Route path="/lazy3">
+            <LazyPage3 />
+          </Route>
+        </Switch>
+      </div>
+    </BrowserRouter>
+
+También podia haber usado component en vez de element
+
+			VIDEO 47 CREAR ARCHIVO DE RUTAS INDEPENDIENTE
+
+Fijate que Fernando optó por una aproximación con un par de cambios interesantes.Agregó una propiedad opcional children:Routes[] que fijate que hace referencia a la propia interfaz en donde está:
+type JSXComponent = () => JSX.Element;
+
+interface Routes {
+  path: string;
+  Component: JSXComponent;
+  name: string;
+  children?: Routes[]
+}
+
+
+export const routes: Routes[] = [
+  { 
+    path:'/lazy1',
+    Component: LazyPage1,
+    name: 'LazyPage 1',
+  },
+  { 
+    path:'/lazy2',
+    Component: LazyPage2,
+    name: 'LazyPage 2',
+  },
+  { 
+    path:'/lazy3',
+    Component: LazyPage3,
+    name: 'LazyPage 3',
+  },
+]
+* Nada me impide crear una propiedad en una interfaz del mismo tipo que la interfaz donde estoy creandola.Interesante.
+Recuerda usar rutas dinámicas siempre que puedas:
+      <ul>
+            {routes.map(({ path, name }) => (
+              <li key={path}>
+                <NavLink to={path} activeClassName="nav-active" exact>
+                  {name}
+                </NavLink>
+              </li>
+            ))}
+          </ul>
+        </nav>
+
+        <Switch>
+          {routes.map(({ path, Component }) => (
+            <Route key={path} path={path} 
+            render={() => <Component />}>
+            </Route>
+          ))}
+
+					VIDEO 49 LAZYLOAD Y SUSPENSE
+
+IMPORTANTE: de nuevo se necesita exportar por defecto un componente para cargarlo bajo demanda.Recuerda que en cuanto use el método lazy necesitaré el HOC <Suspense> y su propiedad fallback:
+
+*Usar carga perezosa implica
+const LazyPage1 = lazy(() => import('../01-lazyload/pages/LazyPage1'));
+const LazyPage2 = lazy(() => import('../01-lazyload/pages/LazyPage1'));
+const LazyPage3 = lazy(() => import('../01-lazyload/pages/LazyPage1'));
+usar el HOC <Suspense> y su propiedad fallback en un punto alto
+<Suspense fallback={<div>Loading...</div>}>
+
+						VIDEO 50 RENOMBRAR CHUNKS
+
+Puedo renombrar un chunk de igual manera que en la v6 :
+const LazyPage1 = lazy(() => import(/* webpackChunkName "LazyChunk1" */'../01-lazyload/pages/LazyPage1'));
+const LazyPage2 = lazy(() => import(/* webpackChunkName "LazyChunk2" */'../01-lazyload/pages/LazyPage2'));
+const LazyPage3 = lazy(() => import(/* webpackChunkName "LazyChunk3" */'../01-lazyload/pages/LazyPage3'));
+
+NOTA:puedo comprobar que cambian los nombres haciendo el build también.
+En cuanto a usar Vite no me deja renombrar el chunk pero sigue siendo muy identificativo el nombre.
+
+				VIDEO 51 LAZYLOAD POR MODULO Y NO POR COMPONENTES
+
+Fijate que en la versión 5 era mucho más complicado usar las rutas hijas.Habia que usar el hook useRouteMath,el cual me devuelve el path y la url.La url iba para el <Link> o el <NavLink> y el path para <Route>.Recuerda que se redireccionaba con <Redirect> y no con <Navigate> como en la v6 :
+export const LazyLayout = () => {
+  const { path, url } = useRouteMatch();
+
+  return (
+    <div>
+      <h1>LazyLayout Page</h1>
+      <ul>
+        <li>
+          <NavLink to={`${url}/lazy1`}>Lazy Page 1</NavLink>
+        </li>
+        <li>
+          <NavLink to={`${url}/lazy2`}>Lazy Page 2</NavLink>
+        </li>
+        <li>
+          <NavLink to={`${url}/lazy3`}>Lazy Page 3</NavLink>
+        </li>
+      </ul>
+
+      <Switch>
+        <Route exact path={`${path}/lazy1`}>
+          <LazyPage1 />
+        </Route>
+        <Route exact path={`${path}/lazy2`}>
+          <LazyPage2 />
+        </Route>
+        <Route exact path={`${path}/lazy3`}>
+          <LazyPage3 />
+        </Route>
+        <Redirect to={`${path}/lazy2`} />
+      </Switch>
+    </div>
+
+Y para la clase activa hay que quitar exact de la Route padre:
+  <NavLink to={path} activeClassName="nav-active" >
+Seguramente habia formas más sencillas de hacerlo pero aqui tengo una forma con la v5 por si la necesito.
+
+Hago el commit y paso a la siguiente sección.
+	
 
