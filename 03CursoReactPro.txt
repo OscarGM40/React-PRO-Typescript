@@ -1,0 +1,231 @@
+				SECCION 08 STATE INITIALIZER + FUNCTION CHILD = RENDER PROPS
+
+
+En esta sección 8 veremos el último patrón que es STATE INITIALIZER + FUNCTION CHILD + RENDER PROPS. Este patrón es el que usa FORMIK.
+Formik nos da una manera de trabajar con formularios,nos crea un Objeto con el cual tengo control absoluto y acceso a esos componentes(en este caso un form,pero puede ser otro componente).
+De nuevo los consumidores tendrán la opción de cambiar lo que desean,o lo que yo quiera dejarles como dev.
+Fijate que el patrón se llama State Initializer,pide un state inicial y una forma de re-establecer el estado a su forma original,algo que ya he visto con Angular y Form Builder.
+
+Lo que están apunto de observar en esta sección es el patrón State Initializer junto al diseño de componentes que utiliza Formik.
+
+El principal objetivo es poder exponer todo lo que el usuario (otro desarrollador) puede utilizar, el patrón principalmente pide que se pueda ofrecer un estado inicial y una forma de re-establecer el estado a su forma original, pero nosotros aquí lo llevaremos a otro nivel exponiendo funciones y nuevas propiedades.
+
+También aprenderemos a enviar una función como children, similar a la implementación de Formik.
+
+					VIDEO 97 CONTINUACION PROYECTO
+
+Refactorizo según indica Fernando.Fijate que Formik usa este patrón usando la property 'initialValues' y 'validate'.
+Lo interesante es que puedo fijar un estadoInicial(por ejemplo,cargando desde el localStorage ese initialState o limitando las existencias máximas de un producto)
+También podría fijar que un usuario sólo pueda comprar un producto,por ejemplo,si es una entrada para el fútbol(productos de alta demanda).
+
+Puedo ver que Formik usa un HOC,algunas properties ya mencionadas y un child que es una función que retorna HTML(es decir tiene como hijo un JSX.Element | React.ReactElement).
+Puedo observar que se tiene mucho control sobre este grupo de HOC+()=>JSX.Element,lo cual hace que este patrón sea muy usado y muy útil.
+
+				VIDEO 98 IMPLEMENTAR LA PROPIEDAD INITIAL-VALUES
+
+IMPORTANTE: la propiedad initialValues es un Objeto,que a su vez necesitará estar en una expresión embebida,asi que usará {{}}.Ejemplo:
+
+<ProductCard key={product.id} product={product} className="bg-dark"
+  initialValues={{
+  count:4,
+  maxCount:10
+ }}
+
+Esto marcará un error ya que estamos en Typescript,asi que hay que retocar las props que recibe ese ProductCard:
+
+
+interface InitialValues {
+  count?:number;
+  maxCount?:number;
+
+}
+
+export interface ProductCardProps {
+  product: Product;
+  children?: ReactElement | ReactElement[];
+  className?: string;
+  style?: CSSProperties;
+  onChange?: (args:onChangeArgs) => void;
+  value?:number;
+  initialValues?:InitialValues;
+}
+
+Fijate que todo es opcional,tanto recibir la prop,como las props de ese objeto si es que lo recibo.
+Y tengo que mandarlo al que controla el estado,en este caso lo dejamos con la forma en la que el setter del customHook primero lo controlaba asi que:
+
+  const { counter, increaseBy } = useProduct({
+    product,
+    onChange,
+    value,
+    initialValues
+    });
+
+Ahora puedo decir que si viene un count de,por ejemplo una DB o un localStorage,  se inicie con ese valor:
+ const [counter, setCounter] = useState<number>(initialValues?.count || value);
+
+Sin embargo veré que el efecto se mete por medio y no lo inicia en 4 sino en 0,ya que se dispara su lógica y lo cambia al value=0.
+
+				VIDEO 99 MOSTRAR EL VALOR INICIAL DEL COMPONENTE
+
+Fernando va a usar una ref<boolean> pero fijate que un useRef no es necesario pasarlo como dependencia en un useEffect(interesante):
+  /* NOTA:un useRef no hace falta mandarlo como dependencia en un efecto */
+   useEffect(() => { 
+    if( !isMounted.current) { 
+      return;}
+    setCounter(value);    
+  }, [value]); 
+  
+   useEffect(() => {
+    isMounted.current=true;
+  }, []);
+   
+				VIDEO 100 UTILIZAR EL MAX-COUNT COMO LIMITANTE
+
+Solo hay que cambiar un poco el código:
+     const newValue = initialValues?.maxCount 
+      ? Math.max(Math.min(counter + value, initialValues.maxCount),0) 
+      : Math.max(counter+value,0)
+    setCounter(newValue);
+NOTA:fijate que siempre estamos llamando al setter,aunque React no renderizará de nuevo el componente si el valor es el mismo(al tratar de incrementar estando ya en el tope o de decrementar estando en 0 React no va a re-renderizar el componente,pero si que estamos llamando a la función.
+Podriamos ser más precisos y controlar esto.
+
+			VIDEO 101 PASAR UNA FUNCION CHILD AL HOC CON SUS PROPS
+
+El patrón de State Initializer exige que aparte de poder dar al usuario la opción de mandar un state inicial,darle la forma de resetear o reinicializarse a ese valor.Será algo asi.
+
+<ShoppingPage>
+  { () => (<h1>Soy un JSX </1>) }
+</ShoppingPage>
+
+Fijate que ahora lo que se pasa por children es una funcion que devolverá el componente,y no el componente en si.Esto va a obligar a un par de cosas:
+
+1- *children ya no devolverá un JSX sino un () => JSX,obviamente:
+  // children?: ReactElement | ReactElement[]; <- ya no se devuelve directamente
+  children: () => JSX.Element; <- si no que se devuelve un f que retorna el JSX
+
+2- *React no puede renderizar funciones,puede renderizar JSX,pero no una funcion que retorne algo(no puede renderizar () => ('123')luego ya no puedo retornar ese children(pero si que puede retornar su ejecución,ojo):
+ <div>
+ { children } <- dado que children es () => JSX si que puedo ejecutarla para que se infiera ese JSX.IMPORTANTE!
+
+NOTA:fijate que ya casi me dijo él lo que tenia que hacer:
+Warning: Functions are not valid as a React child. This may happen if you return a Component instead of <Component /> from render. Or maybe you meant to call this function rather than return it.
+    at div
+
+Simplemente es llamar a la funcion.Sin embargo fijate que ahora tengo beneficios por ser una función y no una variable como era:
+   <div >
+    { children() }
+
+NOTA:dado que es una función yo puedo mandar argumentos.Esto es un beneficio claro.Por ejemplo,podemos mandar un simple string:
+
+  children: (mensaje:string) => JSX.Element;
+
+ <div>
+  { children('este es el mensaje')
+
+Y lógicamente lo podré recibir en esa función:
+
+  <div ...
+    initialValues={{...}}
+  >
+  { (mensaje) => (
+      <h1> {mensaje} </h1>
+   ) }
+  </div>
+
+Es decir que yo puedo exponer y mandar todas las props que quiera ahora,y darle todo procesado a los children de este componente <ProductCard>
+
+				VIDEO 102 TAREA - IS MAX COUNT REACED
+
+REalmente no era tan dificil,pero,importante,fijate que useCallback devuelve una función siempre(no puede devolver una variable,siempre va a devolver una función memorizada que además volverá a ejecutarse cuando cambien sus dependencias.
+Fijate que lo que hago es llamar a una función,que será cacheada,y sólo en base a ciertas dependencias se ejecuta de nuevo,sino se me devuelve la cacheada:
+
+  const isMaxReached =  useCallback(() => {
+    return counter === maxCount;
+  }, [counter,maxCount]);
+
+Si no cambia el counter ni el maxCount isMaxReached es una función cacheada,siempre la misma.Perfecto.
+
+NOTA: podria incluso ni siquiera evaluar esa condicion si no viene el maxCount:
+  const isMaxReached =  useCallback(() => {
+    /* mejor que ni evalue la condicion si no hay un maxCount */
+    return !!maxCount && counter === maxCount;
+  }, [counter,maxCount]);
+La clave está en que !!maxCount de undefined será false.Memoriza que puedes comprobar la existencia de cualquier variable con !!var.
+
+NOTA: fijate que también podia haber usado && para la clase condicional:
+ en vez de el ternario
+ ${ isMaxReached() ? styles.disabled : null }
+${ isMaxReached() && styles.disabled } <- fijate que cuando sea false la va a quitar.
+
+DIFERENCIAS ENTRE USECALLBACK Y USEMEMO
+useCallback: devuelve una funcion memorizada
+useMemo: devuelve un valor memorizado
+Ambas esperan una funcion y un arreglo de dependencias.La diferencia es que useCallback devuelve su funcion callback cuando las dependencias cambian mientras que useMemo llamará a la función y devolverá su valor
+Y fijate que ambas cambiarán su retorno solo si las dependencias cambian.mientras no cambien devuelven lo memorizado.
+
+		VIDEO 103 EXPONER FUNCIONES Y PROPIEDADES FUERA DEL COMPONENTE
+
+Vamos a cambiar ese string que recibimos.Creamos esta interfaz y se la pasamos a la ejecución del método children:
+
+export interface ProductCardHandlers {
+  count: number;
+  isMaxCountReached:boolean;
+  maxCount?: number;
+  product: Product;
+  
+  increaseBy: ( value: number ) => void;
+  reset: () => void;
+}
+
+ children: (args: ProductCardHandlers) => JSX.Element;
+
+Y ahora los mando simplemente,igual que mandaba el string anteriormente:
+   { children({
+     count: counter,
+     increaseBy,
+     isMaxCountReached,
+     maxCount: initialValues?.maxCount,
+     product,
+     reset,
+   }) }
+
+Ahora ya tengo acceso a un montón de cosas(realmente tengo acceso a lo que quiera mandar).Por ejemplo podemos hacer un reset:
+    {
+      ({reset}) => (
+      <>
+       <ProductImage className="custom-image" />
+       <ProductTitle className="text-white text-custom" />
+       <ProductButtons className="custom-buttons" />
+       <button onClick={ reset }>Reset</button>
+      </>
+      )
+    }
+Puedo apreciar la potencia de este patrón.
+
+		VIDEO 104 TRABAJAR CON TODA LA INFORMACIÓN EXPUESTA COMO ARGUMENTO
+
+Una vez llegados a este punto podemos hacer lo que queramos con el código:
+     <button onClick={ args.reset }>Reset</button>
+     <button onClick={() => args.increaseBy(-2)}>-2</button>
+
+     { !args.isMaxCountReached  && <button
+         onClick={() => args.increaseBy(2) } >+2</button>}
+
+     <span>{args.count} - {args.maxCount }</span>
+
+Recuerda que tengo esta sección siempre disponible para revisualizarla si necesito implementar este patrón de State Initializer.
+Guardo el commit y creo una rama state-initializer por ejemplo.
+
+		SECCION 09 NPM DEPLOY - DESPLEGAR PAQUETES DE COMPONENTES
+
+Esta sección tiene por objetivo desplegar todo lo visto hasta ahora a NPM.Vamos a hacer varias secciones de despliegue,con varias herramientas.
+En principio usaremos TxDx,ya que aunque es muy verbosa dejará las bases de lo necesario para despliegues bien cimentadas.
+
+Aquí realizaremos el primer despliegue a NPM de nuestro paquete.
+
+Eventualmente lo haremos utilizando Storybook, pero por ahora lo haremos de la forma como tenemos nuestro componente y una forma directa de hacerlo.
+
+Es importante también realizarlo con TypeScript y exponer los archivos de definición para que otros desarrolladores que también usen TypeScript, también tengan el auto-completado y manejo de errores.
+
+				VIDEO 108 PREPARACIÓN DE NUESTRO JUEGO DE COMPONENTES
+

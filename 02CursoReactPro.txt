@@ -854,4 +854,54 @@ Cambiaremos el primer hook en la siguiente clase para cambiar el control.
 
 						VIDEO 90 CONTROL PROPS
 
+Lo primero que vamos a necesitar es una referencia a si el componente está siendo controlado.Esto lo sabré si viene la función onChange:
+
+export const useProduct = ({ product, onChange, value=0 }:useProductArgs) => {
+  
+  const [ counter, setCounter ] = useState(value);
+  const isControlled = useRef(!!onChange);
+
+NOTA: fijate que !!onChange y oncChange !== undefined son lo mismo
+
+   if (isControlled.current) {
+      return onChange!({count:value,product});
+    }
+
+				VIDEO 91 CONTROLANDO EL ESTADO DESDE EL PADRE
+
+ Fijate que lo que ha hecho es controlar todo desde el setter del padre:
+
+  setShoppingCart((prevShoppingCart) => {
+      /* si el producto por el id existe lo almaceno,sino lo creo */
+      const productInCart: ProductInCart = prevShoppingCart[product.id] || {
+        ...product,
+        count: 0,
+      };
+
+      if (Math.max(productInCart.count + count, 0) > 0) {
+        productInCart.count += count;
+        return {
+          ...prevShoppingCart,
+          [product.id]: productInCart,
+        };
+      }
+      /* borrar el producto */
+      const { [product.id]: toDelete, ...newShoppingCart } = prevShoppingCart;
+      return newShoppingCart;
+    });
+
+El cual es llamado en el onProductCountChange.Recuerda que ese setter va a ir al customHook.Es decir que si existe el onChange lo controlo yo,el padre:
+
+onChange={(e) => onProductCountChange(e)}
+
+Y si no existe lo controla el setter del customHook.Desde luego esta bien claro quien tiene el control en cada caso.
+
+				VIDEO 92 CUSTOM HOOK USE-SHOPPING-CART
+
+Realmente nada que decir,es cortar y pegar.Pero,importante,fijate que este patrón es muy explicativo de lo que hace,pues mediante las props voy a tener el control de varios componentes.Las props serán value y onChange(siempre??).
+IMPORTANTE:fijate que tengo la alternativa,comentando las props,de no controlar varios componentes y usarlo como un componente no controlado.Perfecto.
+
+Creo el commit y la rama,etc...
+
+
 
