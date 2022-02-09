@@ -1,18 +1,15 @@
-import { ProductButtons, ProductImage, ProductTitle } from "../components";
-import { ProductCard } from "../components";
-import { products } from "../data/products";
+# Oscar-Product-Card
+___
+Este es un paquete para pruebas de despliegues a NPM usando TsDx
 
-const product = products[0];
+### ***Author:*** Oscar Gonzalez
 
-// EStructura de la data que usaremos
-//  { '1': { ...product1, count:10},
-//  { '2': { ...product2, count:3} }
-export const ShoppingPage = () => {
-  
-  return (
-    <div>
-      <h1>Shopping Store</h1>
-      <hr />
+#### Ejemplo
+```
+import { ProductCard, ProductImage, ProductTitle, ProductButtons } from 'oscar-product-card';
+```
+
+```
       <ProductCard 
          key={product.id}
          product={product}
@@ -39,6 +36,4 @@ export const ShoppingPage = () => {
              )
            }
       </ProductCard>
-    </div>
-  );
-};
+```

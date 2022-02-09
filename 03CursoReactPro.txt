@@ -227,5 +227,133 @@ Eventualmente lo haremos utilizando Storybook, pero por ahora lo haremos de la f
 
 Es importante también realizarlo con TypeScript y exponer los archivos de definición para que otros desarrolladores que también usen TypeScript, también tengan el auto-completado y manejo de errores.
 
-				VIDEO 108 PREPARACIÓN DE NUESTRO JUEGO DE COMPONENTES
+			VIDEO 108 PREPARACIÓN DE NUESTRO JUEGO DE COMPONENTES
+
+La idea es subir a NPM e importarlo como si fuera cualquier otro paquete.Vamos a crear otra rama,llamada pre-npm y quitar todas las clases css custom(seguir indicaciones de Fernando)
+
+					VIDEO 109 CREAR PROYECTO DE TSDX
+
+Hay que crear un nuevo proyecto con todo lo que quiero subir a npm.La idea es crear algo parecido a una app de Rect con todo lo que pide NPM para subir una aplicación con ellos.
+
+NOTA: puedo buscar cualquier proyecto npm y veré un enlace a su repo de GitHub | Gitlab.Alli puedo comprobar los requerimientos,como por ejemplo la carpeta dist(implementar un ejemplo,aunque esto es opcional).La carpeta lib con todo el código,la carpeta test con las pruebas...
+También pide un archivo de licencias para saber que licencia va a utilizar nuestro proyecto.
+El package.json es muy importante,ya que especifica las dependencias de este paquete que subo.Además,ciertas propiedades son muy importantes:
+name <- debe coincidir
+version <- muy importante ya que tengo que incrementarla
+description <- también importante
+main <- el punto de entrada debe estar correcto
+types <- indica el file con los archivos de definición,también es clave
+scripts
+repository <- es el que se verá en la web
+keywords <- aparecen al final en la web
+homepage <- puedo indicar un enlace que se verá también
+devDependencies <- no se instalarán,son las que necesitó el paquete para hacerse
+dependencies <- estas si se instalarán automáticamente al instalarse mi módulo
+
+Es bastante tedioso crear todo esto desde 0,puedo utilizar tsdx para que cree algo parecido a un paquete ya listo para subirse a npm(tsdx es como create-react-app
+>npx tsdx create <nombre_paquete>
+
+Si es la primera vez lo instalará.Eligo la opción react(basic es un simple proyecto de ts sin un framework y ya veremos más adelante react-with-storybook).Podria cambiarme a este proyecto y ejecutarlo,pero no veré nada.
+
+Desde ya puedo ver que ha creado esos folder que solicita npm (dist,example,test y src) y los files LICENSE y package.json obligatorios.
+
+				VIDEO 110 ESTRUCTURA DE UN PROYECTO TSDX
+
+NOTA: tsdx es una cli para typescript,para desplegar paquetes en TS(de ahi su nombre),de forma rápida.
+IMPORTANTE: el README es lo que se ve en la web de npm,en el paquete,todo lo que se vea aqui o quiera que se vea lo tengo que escribir en MD.Asi que lo edito con lo que quiera.
+En cuanto al package.json está casi todo correcto,quizás la version seria mejor usar la 0.0.1:
+
+  "version": "0.0.1",
+  "license": "MIT",
+  "main": "dist/index.js",
+  "typings": "dist/index.d.ts",
+
+  "engines": {
+    "node": ">=10"  <-podria incluso subirlo
+  },
+
+Esto si es importante,las peerDependencies,a diferencia de las normales o las de desarrollo son dependencias que la persona tiene que satisfacer:
+  "peerDependencies": {
+    "react": ">=16"
+  },
+En este caso la persona que use este paquete necesita usar React 16,no le instalaré nada(eso iria en dependencies) y las devDependencies son para realizar este proyecto,no tienen nada que ver con el paquete.
+
+IMPORTANTE: en el file LICENSE veré que por defecto está en MIT.Esto es correcto,es la licencia estandar en los proyectos de software libre(el que lo instale puede cambiar el código a su antojo,yo no me hago responsable de nada,etc...)
+El .gitignore viene correctamente también.
+En test puedo ejecutar pruebas.
+En src/index.tsx es donde voy a poner el código
+En example/* se suele poner un ejemplo,siempre es útil,sobre todo cuando es un paquete complejo
+En dist/** es lo que terminaré subiendo y la gente termina consumiendo.Hay varios archivos javascript segun environment.
+También está la .github/workflows con dos yaml por si quiero usar Ci/CD
+
+				PASO DOS OPTIMIZAR EL SRC/INDEX.TSX
+
+Sigo las ordenes de Fernando.Fijate que al final en el index.tsx tengo que exportar todo lo que el usuario necesite importar de mi paquete,y justamente es lo que tengo en components/index.ts:
+* En el src/index simplemente exporto lo del components/index
+export * from './components';
+
+NOTA: cuando compile con npm start veré un error al tratar de importar un archivo css.Esto es porque estoy intentando cargar un archivo css como si fuera javascript,lo cual obviamente es un error,si.
+Hay que configurar el proyecto para permitir importar los estilos como módulos(diría que es porque usamos ModuleCSS y no css normales)
+
+			VIDEO 112 PASO 3 CONFIGURAR EL USO DE MODULOS
+
+Si tu código que estás creando tiene imágenes importadas de esta forma y/o CSS
+modularizado de esta forma(si uso CSS modules):
+
+import noImage from ‘../assets/no-image.jpg';
+import styles from ‘../styles/styles.module.css';
+
+Necesitaremos crear un archivo de configuración de TSDX “tsdx.config.js” en la raíz que nos ayudará en el proceso de construcción de nuestro paquete
+
+Ovbiamente con create-react-app puedo importar imagenes o estilos de esta forma pero en tsdx esto no es válido.La solución es crear un archivo de configuración para tsdx en la raiz (tsdx.config.js).
+
+Copio el siguiente ćodigo del pdf de Fernando,con el que estamos añadiendo dos plugins nuevos:
+
+const postcss = require('rollup-plugin-postcss');
+const images = require('@rollup/plugin-image');
+
+module.exports = {
+ rollup(config, options) {
+
+   config.plugins = [
+     postcss({ modules: true }),
+     images({ incude: ['**/*.png', '**/*.jpg'] }),
+      ...config.plugins,
+   ];
+   return config;
+ },
+};
+
+IMPORTANTE:  aun falta los type definition,debo crear otro file en src/typings.d.ts con ese nombre.Fernando deja un gist con el código para este file:
+
+GIST: https://gist.github.com/Klerith/be084330d6522bb4576a42b068e9b842
+
+Código:
+declare module '*.css' {
+  const content: { [className: string]: string };
+  export default content;
+}
+
+declare module "*.jpg" {
+  const value: any;
+  export default value;
+}
+
+Obviamente me pide realizar las instalaciones respectivas para esas dependencies:
+
+yarn add -D rollup-plugin-postcss
+yarn add -D @rollup/plugin-image
+
+Ojo,que los paquetes están siendo importados mediante require.
+
+Bien,compilo de nuevo y vemos otro error:
+'React' refers to a UMD global, but the current file is a module. Consider adding an import instead.ts(hay que importar react en cada uno de los lugares que use JSX,a pesar de estar en React 17).
+En resumen tengo que dejar todo compilando satisfactoriamente:
+✔ Compiled successfully <- asinto
+Una vez compilando todo OK lo siguiente sería hacer el build(npm build)
+
+					PASO 4 REALIZAR EL BUILD
+
+
+
 
