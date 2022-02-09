@@ -1,7 +1,6 @@
 import { ProductButtons, ProductImage, ProductTitle } from "../components";
 import { ProductCard } from "../components";
 import { products } from "../data/products";
-// import { useShoppingCart } from "../hooks/useShoppingCart";
 
 import "../styles/custom-styles.css";
 
@@ -39,7 +38,6 @@ export const ShoppingPage = () => {
               >+2</button>}
 
               <span>{args.count} - {args.maxCount }</span>
-              {/* {JSON.stringify(args, null, 2)} */}
              </>
              )
            }
