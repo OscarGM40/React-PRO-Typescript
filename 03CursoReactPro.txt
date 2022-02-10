@@ -354,6 +354,103 @@ Una vez compilando todo OK lo siguiente sería hacer el build(npm build)
 
 					PASO 4 REALIZAR EL BUILD
 
+Siempre asegurandonos que compila satisfactoriamente,ejecutamos el comando build(el cual ejecutará 'tsdx build'.Esto creará el directorio 'dist'.
+
+También creará un montón de .d.ts(data definition types).
+
+NOTA: es buena idea definir los PropTypes por si el usuario fuera a usar Javascript cual prehistoric:
+En TS hay que instalarlas:
+
+npm install --save prop-types
+npm install --save-dev @types/prop-types
+
+EN un componente llamado Article...
+Article.propTypes = {
+  title: PropTypes.string.isRequired,
+  price: PropTypes.number.isRequired,
+};
+
+De momento no lo haremos porque con TS es suficiente.
+
+				VIDEO 114 PASO 6 - GITHUB REPO -
+
+Es conveniente que el proyecto sea un repositorio,puede que eventualmente lo transfiera  o invite a colaboradores, o bien aceptar mejoras de otros desarrolladores.
+Para agregar un repo:
+"repository":{
+  "url":"https://github.com/<tu_repositorio>",
+  "type":"git"	
+
+Y de tener un sitio web se suele agregar la prop 'homepage' en el package.json:
+"homepage":"https://midominio.com"
+
+Adicionalmente,si quiero que el paquete sea fácilmente visible por la comunidad e indexado por los bots de Google y otros,debo añadir la llave 'keywords' con un arreglo de palabras clave:
+"keywords":["product","card"] 
+
+NOTA: las propiedades pueden ir en cualquier linea del package.json.Y todo esto se verá al entrar al npm Registry.
+Fijate que todo esto es opcional,y ya podriamos publicarlo,si,pero en la realidad siempre se debería pasar un repo,una web de enlace y keywords clave,asi que es mejor verlo como obligatorio.
+
+						VIDEO 115 PRUEBAS AUTOMATICAS
+
+Tener pruebas automáticas es importantisimo.Especialmente en un paquete que despliego y publico.
+
+Las pruebas automáticas,además de asegurar que la funcionalidad está siendo respetada, me preveen contra breaking changes,asegurando que la funcionalidad anterior también funciona tras una actualización(lo cual obviamente debe hacer).
+
+Haremos una pequeña prueba básica.Fijate que me pide los type definitions pasar:
+npm i --save-dev @types/jest
+npm i --save-dev @types/mocha
+
+NOTA: no funciona esto(normal,si no tiene ni jest instalado,peazo asinto),seguiré por el PDF de Fernando mejor:
+
+Preferencia personal: Jest
+1- Instalar las dependencias en modo dev necesarias:
+>npm add --dev jest babel-jest @babel/preset-env @babel/preset-react react-test-renderer identity-obj-proxy
+
+2- Instalar la contraparte de TypeScript(fijate que con tsdx me falta todo):
+yarn add @types/react @types/react-dom @types/react-test-renderer @types/jest
+
+3-Vamos a tener el mismo problema con las imagenes y los CssModules que hemos usado.En el package.json ignoraremos las imágenes y css cargados como módulos de JavaScript que darán error.
+ Añadir la siguiente configuración en el package.json:
+
+"jest":{
+   "moduleNameMapper": {
+      "\\.(jpg|jpeg|png|gif|eot|otf|webp|svg|ttf|woff|woff2|mp4|webm|wav|mp3|
+m4a|aac|oga)$": "identity-obj-proxy",
+       "\\.(css|less|scss|sass)$": "identity-obj-proxy"
+ } }
+
+3- Preferencia personal, creamos otro script con --watch para que se quede en modo observador y no finalize la suite de pruebas.
+
+Crear el siguiente script en el package.json:
+"test:watch": "tsdx test --watch",
+
+Una vez instalado todo faltará hacer alguna configuración.
+
+					VIDEO 116 PRUEBAS EN PRODUCT TITLE
+
+NOTA: al final solucioné el error con import '@types/jest';
+'React' refers to a UMD global, but the current file is a module <- import React from 'react';
+
+Hacemos un par de pruebas con esta libreria react-test-renderer en vez de enzyme.Habrá que usar su método renderer.create en vez de shallow,pues no estamos con enzyme.
+
+  test('debe de mostrar el componente con el nombre del producto', () => {
+    const wrapper = renderer.create(
+    <ProductCard product={product1} >
+      { () => (
+        <ProductTitle />
+      
+        )
+      }
+    </ProductCard>
+      );
+
+    expect(wrapper.toJSON()).toMatchSnapshot();
+  });
+
+Comprobamos en el folder de las snapshots visualmente que todo esté correcto.
+
+				VIDEO 117 PRUEBAS EN PRODUCT IMAGE
+
+
 
 
 

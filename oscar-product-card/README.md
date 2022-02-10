@@ -11,7 +11,6 @@ import { ProductCard, ProductImage, ProductTitle, ProductButtons } from 'oscar-p
 
 ```
       <ProductCard 
-         key={product.id}
          product={product}
          initialValues={{
            count:4,

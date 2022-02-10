@@ -1,9 +1,23 @@
 {
   // see https://www.typescriptlang.org/tsconfig to better understand tsconfigs
-  "include": ["src", "types"],
+  "include": [
+    "src",
+    "types"
+  ],
   "compilerOptions": {
     "module": "esnext",
-    "lib": ["dom", "esnext"],
+    "target": "es5",
+    "allowJs": true,
+    "typeRoots": [
+      "./node_modules/@types"
+    ],
+    "types": [
+      "node",
+      "jest"
+    ],
+    "lib": [
+      "dom"
+    ],
     "importHelpers": true,
     // output .d.ts declaration files for consumers
     "declaration": true,
@@ -31,5 +45,10 @@
     "forceConsistentCasingInFileNames": true,
     // `tsdx build` ignores this option, but it is commonly used when type-checking separately with `tsc`
     "noEmit": true,
-  }
+  },
+  "typeAcquisition": {
+    "include": [
+      "jest"
+    ]
+  },
 }

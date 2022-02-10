@@ -1,5 +1,6 @@
 import React from 'react';
 import { createContext, CSSProperties } from 'react';
+import PropTypes from 'prop-types';
 
 import { useProduct } from '../hooks/useProduct';
 import {
@@ -17,14 +18,16 @@ export const ProductContext = createContext({} as ProductContextProps);
 const { Provider } = ProductContext;
 
 export interface ProductCardProps {
-  product: Product;
   children: (args: ProductCardHandlers) => JSX.Element;
   className?: string;
   style?: CSSProperties;
   onChange?: (args: onChangeArgs) => void;
   value?: number;
+  product: Product;
   initialValues?: InitialValues;
 }
+
+;
 
 export const ProductCard = ({
   children,
@@ -64,4 +67,21 @@ export const ProductCard = ({
       </div>
     </Provider>
   );
+};
+
+ProductCard.propTypes = {
+  children: PropTypes.func.isRequired,
+  className: PropTypes.string,
+  style: PropTypes.object,
+  onChange: PropTypes.func,
+  value: PropTypes.number,
+  product: PropTypes.shape({
+    id: PropTypes.any.isRequired,
+    title: PropTypes.string.isRequired,
+    img: PropTypes.string,
+  }).isRequired,
+  initialValues: PropTypes.shape({
+    count: PropTypes.number,
+    maxCount: PropTypes.number,
+  }),
 };
