@@ -15,7 +15,7 @@ export interface ProductImageProps {
 export const ProductImage = ({ img = "", className,style}:ProductImageProps) => {
   const { product } = useContext(ProductContext);
 
-  return <img src={img || product.img || NoImage} alt="Image" className={`${styles.productImg} ${className}`} style={style}  />;
+  return <img src={img || product?.img || NoImage} alt="Image" className={`${styles.productImg} ${className}`} style={style}  />;
 };
 
 ProductImage.propTypes = {
