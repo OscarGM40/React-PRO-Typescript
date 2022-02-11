@@ -450,7 +450,131 @@ Comprobamos en el folder de las snapshots visualmente que todo esté correcto.
 
 				VIDEO 117 PRUEBAS EN PRODUCT IMAGE
 
+Simplemente es hacer lo mismo que en el ProductTitle,comprobar mediante la snapshot que llega una propiedad custom(una imagen cualquiera) y que si se le pasa un producto la coge automáticamente.
 
+				VIDEO 118 PRUEBAS EN PRODUCT CARD
 
+Empezamos creando una snapshot y comprobando que llegan los children y el product,propiedades que puedo ver que son obligatorias:
+
+  it('debe de mostrar el componente correctamente', () => {
+    const wrapper = renderer.create(
+    <ProductCard product={product2} >
+      {() => <h1>Product card</h1>}
+      </ProductCard>);
+    
+    expect(wrapper.toJSON()).toMatchSnapshot();
+  });
+
+Fijate que puedo mandar  cualquier cosa como children,pues estoy en pruebas.Fijate que Fernando tiene razón en que estas pruebas son rápidas y bastante útiles,crear una snapshot es una prueba fundamental.
+
+Bien,como no estamos con enzyme vamos a tener que buscarnos la vida parar simular un click y comprobar que incrementa el contador.Lo primero es sacar los métodos y propiedadess necesarios de los children:
+
+   test('debe de incrementar el contador', () => {
+    const wrapper = renderer.create(
+      <ProductCard product={product2}>
+        {
+          ({count,increaseBy}) => 
+          <>
+            <h1>Product card</h1>
+            <h2>{count}</h2>
+            <button onClick={increaseBy}>+</button>
+          </>
+        }
+      </ProductCard>
+    );
+
+Recuerda que puedo usar el html que quiera asi que creamos un boton que llame al increaseBy y un h2 con el count por ejemplo.Fijate como accedemos a ese html:
+
+    let tree = wrapper.toJSON();
+	console.log(tree)
+
+      {
+        type: 'div',
+        props: { className: 'productCard undefined', style: undefined },
+        children: [
+          { type: 'h1', props: {}, children: [Array] },
+          { type: 'h2', props: {}, children: [Array] },
+          { type: 'button', props: [Object], children: [Array] }
+        ]
+      }
+Luego puedo acceder a tree.children[2] y simular el click
+
+  (tree as any).children[2].props.onClick();
+  tree = wrapper.toJSON();
+  expect((tree as any).children[1].children[0]).toBe('1');
+
+NOTA:fijate que da error porque el llamado al increaseBy cambiará el state y debo meter todo en un act.Con esta nueva libreria lo tengo que desestructurar de la propiedad core 'renderer'
+
+/* renderer me proporciona el método act,importante */
+const { act } = renderer;
+
+act(() => {
+  (tree as any).children[2].props.onClick();
+});
+
+IMPORTANTE: este error es porque esa sentencia en concreto cambiará el state de mi app.Cualquier cambio en el state debe ir englobaco en act()
+
+					PASO 8 PUBLICAR EL PAQUETE
+
+Lo primero será crear una cuenta en npm.Una vez creada hay que usar <npm login>.
+Pedirá el username y la password y un email(puedo ver con npm whoami mi username)
+
+Antes de publicar vamos a crear un commit,un push y una release-tag.
+NOTA:fijate que esto no es necesario para publicar algo en npm,al publicar simplemente se cogerá ese código y se publicará,aunque obviamente,normalmente irá sincronizado con git.Una vez sincronizado ya si,publicamos
+
+>npm publish
+* New Version <- nada
+IMPORTANTE: si veo que estoy logeado correctamente y me da error 403 probar con otro nombre.
+Y recuerda que la OneTimePassword me vale el numero de MFA!
+
+				VIDEO 120 NUEVA VERSION DEL PAQUETE
+
+Para subir una nueva version Fernando recomienda estos pasos:
+
+Una actualización se resume en:
+1. Actualizar la carpeta SRC - Si aplica
+2. Actualizar el example - Si aplica
+3. Subir la versión en el package.json
+4. Realizar la actualización en el repositorio local y remoto
+5. Se recomienda crear un nuevo release tag
+6. Ejecutar nuevamente el yarn publish
+
+Sin embargo,el único no opcional es subir la versión(y recuerda que la propiedad name es fundamental).
+
+NOTA: normalmente se usa 'rc' en las versiones.Ejemplo:
+version: "1.0.0-rc" <- version release-candidate
+Y cuando ya deja de ser candidata se quita el rc:
+version: "1.0.0"
+Es decir,que no suelen empezar desde la 0.0.1 sino desde la 1.0.0.
+
+Puedo observar que no tiene nada actualizar un paquete.Ahora viene la parte interesante,que es usarlo xd
+
+				VIDEO 121 USANDO NUESTRO PAQUETE DE NPM
+
+Creamos una nueva app con la plantilla de typescript:
+npx create-react-app@latest <name> --template typescript
+
+Ya simplemente es copiar desde el registro,pues tengo tanto el import como un ejemplo de uso.Si quisiera probar la foto tendré que copiarla en la carpeta public
+
+					SECCION 10 FORMIK REACT FORMS
+
+Hay dos secciones de formularios.En ésta usaremos Formik.Si bien se pueden tratar los formularios manualmente,son demasiadas cosas que debería controlar, y por ello es mejor usar librerias de terceros como Formik.
+Si bien al principio puede que no vea la mejora,al final de la sección veré una gran mejoría si uso Formik.
+Formik recomienda usar Yup como validador
+
+Esta es una sección muy importante para comprender las bases y temas avanzados de Formik, aquí veremos:
+1- useFormik
+2- Formik Component
+3- Formik Context
+4- useField
+5- Formik Custom Components
+6- Custom Components
+7- Metadata de los inputs
+8- Abstractation
+9- Yup
+   a- Validaciones tipicas
+   b- Validaciones personalizadas
+
+						VIDEO 125 INICIO DEL PROYECTO - FORMIK -
 
 

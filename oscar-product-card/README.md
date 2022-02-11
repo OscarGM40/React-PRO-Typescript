@@ -6,7 +6,7 @@ Este es un paquete para pruebas de despliegues a NPM usando TsDx
 
 #### Ejemplo
 ```
-import { ProductCard, ProductImage, ProductTitle, ProductButtons } from 'oscar-product-card';
+import { ProductCard, ProductImage, ProductTitle, ProductButtons } from 'oscar-product-card-react-ts';
 ```
 
 ```
