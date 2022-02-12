@@ -575,6 +575,67 @@ Esta es una sección muy importante para comprender las bases y temas avanzados 
    a- Validaciones tipicas
    b- Validaciones personalizadas
 
-						VIDEO 125 INICIO DEL PROYECTO - FORMIK -
+			VIDEO 125-126 INICIO DEL PROYECTO - FORMIK - FORMA TRADICIONAL
+
+Abro la web de formik que proporciona Fernando y copio los styles que también proporciona.Creamos un componente RegisterPage con estos campos:
+      <form>
+        <input type="text" placeholder="Name" />
+        <input type="email" placeholder="Email" />
+        <input type="password" placeholder="Password" />
+        <input type="password" placeholder="Repeat password" />
+        <button type="submit">Create</button>
+      </form>
+Obviamente tenemos que gestionar este formulario.
+
+					VIDEO 127 FORMA TRADICIONAL CON USE-STATE
+
+Fijate que para saber el tipo de evento que recibo lo mejor es no fiarse y ver el evento que mando usando esta sintaxis:
+
+ onChange={(e) => onChange(e)} <- me pongo sobre la 'e' y veré que es de tipo ChangeEvent<HTMLInputElement>
+
+No uses la forma corta ni te pongas en otro lado.Ahora ya puedo escribir la función bien:
+
+const onChange = (event: ChangeEvent<HTMLInputElement>) => {
+  const { name, value } = event.target;
+  setRegisterData({
+    ...registerData,
+    [name]: value
+  });
+}
+
+Para controlar un input iempre es onChange + name,el value lo puedo usar,pero siempre tras haberlo controlado.
+En el siguiente video vamos a crear un custom hook con todo esto.
+
+					VIDEO 129 CUSTOMHOOK USE-FORM
+
+Para crearnos nuestro customHook tengo que tener en cuenta la sintaxis para agregar un tipo a una arrow function( const <name> = <T>(args:T) => {}
+
+Va antes de los argumentos,si fuera una function normal sería function useForm<T>(args:T) pero como es una arrow function se separa justo en el name:
+const arrow_name = <T>(args:T)=> pero que asinto soy
+
+IMPORTANTE: esta sintaxis sólo vale si el archivo es extensión .ts(no funciona con .tsx)
+
+export const useForm = <T>(initialData:T) => {
+/* seria lo mismo que esto */
+// export function useForm<T>(initialData:T) {
+
+  const [ formData, setFormData] = useState(initialData);
+
+  const onChange = (event: ChangeEvent<HTMLInputElement>) => {
+    setFormData((prev) => ({
+      ...prev,
+      [event.target.name]: event.target.value
+    }));
+  };
+
+  return {
+    ...formData,
+    formData,
+    onChange,
+  }
+}
+Fijate que esparcimos el objeto para mayor comodidad.
+
+				VIDEO 130 EXPANDIR FUNCIONALIDAD DE NUESTRO HOOK
 
 
