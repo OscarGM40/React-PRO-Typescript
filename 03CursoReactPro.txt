@@ -638,4 +638,147 @@ Fijate que esparcimos el objeto para mayor comodidad.
 
 				VIDEO 130 EXPANDIR FUNCIONALIDAD DE NUESTRO HOOK
 
+Podemos expandir un poco más la funcionalidad mandando una función que resetee al valor inicial nuestro form.Pan comido:
+ 
+ const reset = () =>{
+    setFormData({...initialData});
+  }
+  return {
+    ...formData,
+    formData,
+    onChange,
+    reset <- la mando también
+  }
+Ya sólo faltaría llamarla cuando quiera.
 
+IMPORTANTE:fijate que faltan las validaciones.Un formulario debe validar sus campos,da igual el framework,lenguaje...Fernando ya creó algunos estilos para esto,asi que podriamos hacer algo como esto:
+
+  className={`${name.trim().length <= 0 && "has-error"}`} 
+{ name.trim().length <=0 &&  <span>Este campo es necesario</span>}
+
+De esta forma puedo controlar si hay un caracter o esta vacio,pero fijate que realmente son solo estilos,y además aún me quedaría comprobar que no se muestre ya desde un principio,con isTouched sobre ese campo.
+
+Y para el email sería mucho más complicado.Si bien está la propiedad pattern Fernando deja un gist con una función validadora de un email mediante la interfaz RegExp:
+
+  const isValidEmail = (email: string) => {
+    const re:RegExp = /^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+    return re.test(email);
+  }
+
+Con esta función ahora podria comprobar el email y de nuevo validar
+ className={`${!isValidEmail(email) && "has-error"}`}
+  />
+ {!isValidEmail(email) && <span>Email no válido</span>}
+
+Podriamos crear tantas validaciones como queramos:
+
+{password1.trim().length <= 0 && <span>Este campo es necesario</span>}
+{password1.trim().length < 6 && password1.trim().length > 0 && <span>La contraseña es demasiado corta</span>}
+
+Y para la otra password:
+{password2.trim().length <= 0 && <span>Este campo es necesario</span>}
+{password1 !== password2 && password2.trim().length > 0 && <span>Las contraseñas no coinciden</span>}
+
+Aún me quedaría gestionar la clase y encima,realmente esto es solo para estilizar,va a hacer el posteo del formulario igual.También tendría que hacer las validaciones en el submit del formulario.
+Es por esto que se usan librerias de terceros.
+
+				VIDEO 131 FORMIK EJERCICIO BÁSICO
+
+Fijate que podría seguir con la forma anterior,hacer el useForm superrobusto y subirlo a npm.
+Sin embargo estamos aqui para ver como integramos Formik y además usando Typescript.Eventualmente crearemos nuestros propios formularios y hasta crear nuestros formularios dinámicamente en base a por ejemplo una respuesta http.Perfecto.
+
+Bien,creo otra página con otro formulario:
+      <h1>Formik Basic Tutorial</h1>
+      <form noValidate={true}>
+        <label htmlFor="firstName">First Name</label>
+        <input type="text" name="firstName" />
+        <span>First Name is required</span>
+
+        <label htmlFor="lastName">Last Name</label>
+        <input type="text" name="lastName" />
+        <span>Last Name is required</span>
+
+        <label htmlFor="email">Email Address</label>
+        <input type="email" name="email" />
+        <span>Email is required</span>
+        <span>Check for an valid email format</span>
+
+        <button type="submit">Submit</button>
+      </form>
+
+				VIDEO 132 OBTENER INFORMACIÓN DEL FORMULARIO
+
+Si bien puede parecer al principio que no hay mucha diferencia llegará un punto en que notaré esa diferencia.
+NOTA: las dos mejores librerias son formik y react-hooks-form.Debo dominarlas.
+
+Bien,instalemos formik aqui:
+npm i formik
+Para trabajar con formik hay varias formas y hay que configurar un par de cosas.Vayamos poco a poco.Lo primero es importar su customHook useFormik:
+
+import {useFormik} from 'formik';
+
+*este hook espera un objeto por argumento,con dos propiedades,initialValues y onSubmit:
+
+const formik = useFormik({
+  initialValues:{},
+  onSubmit:(values) => {console.log(values}
+
+IMPORTANTE: formik también va a gestionar el onChange={e => handleChange(e.target.value)} y muchas otras features.Tan solo tengo que ir por cada input asi:
+   <input 
+     type="text"
+     name="firstName" 
+     onChange={formik.handleChange}
+     value={formik.values.firstName
+   />
+
+Lo mismo para el value,lo tendré en formik.values.{fieldName}.Obviamente los names deben coincidir con las propiedades del initialState.
+NOTA:fijate que los de formik han llamado a todas las funciones que ya me proveen con handleXXX(handleChange,handleSubmit,handleReset,...
+
+Si ahora comprobara linea por linea con la implementación manual veré que es casi lo mismo,a excepción de donde situé el onSubmit(realmente solo cambia esto).Si bien parece que no hay mejora realmente tengo acceso a un sinfin de validaciones y métodos necesarios y que ya me proveen ellos.Muy interesante esta libreria.
+
+				VIDEO 133 FORMIK VALIDACIONES MANUALES
+
+Realmente dentro de este hook useFormik({}) tengo muchas más opciones aparte de initialValues y onSubmit,claro que estas son obligatorias,también se podría decir lo mismo de la función validate(values):errors:{} ( o validationSchema que ayuda mucho a que las validaciones sean mucho más legibles,suplantando a validate).
+
+Pero empecemos por validate.Fijate que es una funcion que recibe los initialValues y devuelve un objeto de tipo FormikErrors<T> con los posibles errores.T será el tipo de los initialValues.Ejemplo:
+
+* Sintaxis básica
+  const validate = (values: FormValues) => {
+    const errors: FormikErrors<FormValues> = {}
+
+    return errors;
+  }
+
+Al final queda así:
+const re: RegExp = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i;
+
+const FormikBasicPage = () => {
+  const validate = ({ firstName, lastName, email }: FormValues) => {
+    const errors: FormikErrors<FormValues> = {};
+
+    if (firstName.trim().length <= 0) {
+      errors.firstName = "Este campo es necesario";
+    } else if (firstName.trim().length > 15) {
+      errors.firstName = "Este campo no puede tener más de 15 caracteres";
+    }
+
+    if (lastName.trim().length <= 0) {
+      errors.lastName = "Este campo es necesario";
+    } else if (lastName.trim().length > 10) {
+      errors.lastName = "Este campo no puede tener más de 10 caracteres";
+    }
+
+    if (email.trim().length <= 0) {
+      errors.email = "Este campo es necesario";
+    } else if (!re.test(email)) {
+      errors.email = "Invalid email address";
+    }
+    
+    return errors;
+  };
+
+NOTA:fijate que es un tanto verboso.Sin embargo sigue siendo mejor que la forma manual,en la que tengo que definir las validaciones dos veces,con formik con una valdrá.Además lo resumiremos más adelante.
+  Bien,si ahora trato de llamar al submite veré que ya gestionan ellos que si hay errores no se postee el formulario.Esto es otra ventaja también.
+Claro que aún falta mostrar los errores condicionalmente.
+
+			VIDEO 134 FORMIK - MOSTRAR ERRORES EN  LOS CAMPOS
