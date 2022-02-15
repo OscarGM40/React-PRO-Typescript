@@ -10,6 +10,7 @@ interface FormValues {
 const re: RegExp = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i;
 
 const FormikBasicPage = () => {
+  
   const validate = ({ firstName, lastName, email }: FormValues) => {
     const errors: FormikErrors<FormValues> = {};
 
@@ -34,50 +35,56 @@ const FormikBasicPage = () => {
     return errors;
   };
 
-  const formik = useFormik({
-    initialValues: {
-      firstName: "mokete",
-      lastName: "jhonson",
-      email: "emilio@perez.oso",
-    },
-    onSubmit: (values) => {
-      console.log(values);
-    },
-    validate:validate,
-  });
+  const { handleChange, values, handleSubmit, errors, touched, handleBlur } =
+    useFormik({
+      initialValues: {
+        firstName: "",
+        lastName: "",
+        email: "",
+      },
+      onSubmit: (values) => {
+        console.log(values);
+      },
+      validate: validate,
+    });
 
   return (
     <div>
+      
       <h1>Formik Basic Tutorial</h1>
 
-      <form noValidate={true} onSubmit={formik.handleSubmit}>
+      <form noValidate={true} onSubmit={handleSubmit}>
         <label htmlFor="firstName">First Name</label>
         <input
           type="text"
           name="firstName"
-          onChange={formik.handleChange}
-          value={formik.values.firstName}
+          onBlur={handleBlur}
+          onChange={handleChange}
+          value={values.firstName}
         />
-        <span>First Name is required</span>
+        {touched.firstName && errors.firstName && (
+          <span>{errors.firstName}</span>
+        )}
 
         <label htmlFor="lastName">Last Name</label>
         <input
           type="text"
           name="lastName"
-          onChange={formik.handleChange}
-          value={formik.values.lastName}
+          onBlur={handleBlur}
+          onChange={handleChange}
+          value={values.lastName}
         />
-        <span>Last Name is required</span>
-
+        {touched.lastName && errors.lastName && <span>{errors.lastName}</span>}
+        
         <label htmlFor="email">Email Address</label>
         <input
           type="email"
           name="email"
-          onChange={formik.handleChange}
-          value={formik.values.email}
+          onBlur={handleBlur}
+          onChange={handleChange}
+          value={values.email}
         />
-        <span>Email is required</span>
-        <span>Check for an valid email format</span>
+        {touched.email && errors.email && <span>{errors.email}</span>}
 
         <button type="submit">Submit</button>
       </form>

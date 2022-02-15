@@ -782,3 +782,177 @@ NOTA:fijate que es un tanto verboso.Sin embargo sigue siendo mejor que la forma 
 Claro que aún falta mostrar los errores condicionalmente.
 
 			VIDEO 134 FORMIK - MOSTRAR ERRORES EN  LOS CAMPOS
+
+Para mostrar los errores tengo que extraerlos de su hook también,pues me lo proporcionan ellos:
+
+ const { handleChange, values, handleSubmit, errors} = useFormik();
+
+Ya solo tengo que ir campo por campo mostrando el error condicionalmente:
+   { errors.firstName &&  <span>{errors.firstName}</span>}
+
+IMPORTANTE: el error debe llevar como texto la misma propiedad,ya que éste irá cambiando:
+ {errors.lastName  &&  <span>{errors.lastName}</span>
+}
+
+Fijate que irá cambiando el texto del error:
+    if (lastName.trim().length <= 0) {
+      errors.lastName = "Este campo es necesario";
+    } else if (lastName.trim().length > 10) {
+      errors.lastName = "Este campo no puede tener más de 10 caracteres";
+    }
+
+Sin embargo,podemos comprobar que no está del todo correcto,al perder un foco un control no sale el error(isTouched) y encima me muestra los tres errores a la vez.Esto es normal,ya que se ejecuta toda la función validadora y sería una mejor experiencia de usuario ir validando sólo los campos que fueron tocados.
+
+Obviamente esto tiene fácil solución,pues Formik también me proporciona 'touch
+ed'desde su hook:
+ const { handleChange, values, handleSubmit, errors, touched} = useFormik();
+
+* Ya puedo mejorar esa lógica,mejorando la experiencia de usuario...
+ { touched.firstName && errors.firstName &&  <span>{errors.firstName}</span>}
+
+NOTA:sin embargo,puedo observar que falta algo,y ese algo es el handleBur,también debo manejarlo.Fijate que al usar Formik la propiedad name se vuelve imprescindible también,aunque realmente siempre lo es:
+<input
+   type="email"
+   name="email"
+   onBlur={handleBlur}
+   onChange={handleChange}
+   value={values.email}
+   />
+
+Si bien pudiera parecer que no estamos ganando nada,seguiremos avanzando con Formik y veremos como al final si que lo hacemos.
+
+					VIDEO 135 YUP - VALIDATION SCHEMA BUILDER
+
+Yup es un Javascript schema builder for value parsing and validation(un constructor de esquemas de validaciones).Un schema Yup es altamente expresivo.
+Está inspirado en Joi,pero es para el cliente,en vez de para el backend.Usa funciones encadenadas al estilo jQuery.
+
+Lo primero será instalarlo,que realmente debí instalar junto con formik
+> npm i --save yup
+
+NOTA: Formik recomienda Yup,pero puedo usar cualquier validación,como ya hemos visto con la nuestra.
+
+Siempre me traeré toda la libreria:
+import * as Yup from 'yup';
+
+import * as yup from 'yup';
+
+Formik ya me da la propiedad validationSchema para pasarle un schema:
+
+ validationSchema:  yup.object().shape({
+  name: yup.string().max(15).min(3).required(),
+  age: yup.number().required().positive().integer(),
+  email: yup.string().email(),
+  website: yup.string().url(),
+  createdOn: yup.date().default(function () {
+    return new Date();
+  }),
+});
+
+IMPORTANTE: en su documentación puedo ver todas las funciones que tiene.Fijate que los metodos aceptan un mensaje validador como argumento adicional,lo cual viene genial.Por ejemplo estas son algunas funciones para strings:
+
+string.required(message?: string | function): Schema
+string.length(limit: number | Ref, message?: string | function): Schema
+string.min(limit: number | Ref, message?: string | function): Schema
+string.max(limit: number | Ref, message?: string | function): Schema
+string.matches(regex: Regex, message?: string | function): Schema
+string.matches(regex: Regex, options: { message: string, excludeEmptyString: bool }): 
+
+number.min(limit: number | Ref, message?: string | function): Schema
+number.max(limit: number | Ref, message?: string | function): Schema
+number.lessThan(max: number | Ref, message?: string | function): Schema
+number.moreThan(min: number | Ref, message?: string | function): Schema
+number.positive(message?: string | function): Schema
+number.negative(message?: string | function): Schema
+number.integer(message?: string | function): Schema
+
+date.min(limit: Date | string | Ref, message?: string | function): Schema
+date.max(limit: Date | string | Ref, message?: string | function): Schema
+
+Con todo esto ya puedo mandarle un schema con mis mensajes propios:
+      validationSchema: Yup.object().shape({
+        firstName: Yup.string()
+          .max(10, "debe de tener máximo 10 caracteres")
+          .min(3, "debe de tener minimo 3 caracteres")
+          .required("required"),
+        lastName: Yup.string()
+          .max(15, "debe de tener máximo 15 caracteres")
+          .min(3, "debe de tener minimo 3 caracteres")
+          .required("required"),
+        email: Yup.string()
+          .email('debe ser un email válido')
+          .required('required'),
+      }),
+Fijate qué fácil lo deja todo esta librería.Eventualmente sacaremos de aqui este objecto para hacer validaciones dinámicas de formularios creados dinámicamente.
+
+					136 FORMIK - GETFIELDPROPS
+
+Que pereza ir por cada campo escribiendo ese onBlur,onChange,value,no?Debería haber una manera de hacer esto más sencillo,verdad?
+
+Pues hay varias formas,empezaremos por la primera,que es usando la función getFieldProps,el cual se saca del hook también,claro.
+
+const { ..., getFieldProps} = useFormik();
+
+Ahora sólo hay que pasarlo por cada campo pasandole un name.Importante:fijate que el getFieldProps inclusive te establece el name:
+    <input
+      type="text"
+      {...getFieldProps('firstName')} > <- no hace falta nada más
+
+IMPORTANTE: el getFieldProps regresa un objeto(por eso tengo que desestructurarlo) el cual regresa el onChange,onBlur,value y name.Increible.
+
+Fijate que esto hace que ya no necesite el handleChange,handleBlur y value del useFormik,lógicamente.Ni tampoco la interfaz o la expresión regular.Desde luego ha sido un paso muy importante para reducir código.
+Pero aún se pueden reducir más cosas.
+
+					VIDEO 137 FORMIK - COMPONENTES
+
+En Formik tengo muchos componentes preconfigurados que ya me proporcionan ellos.Estos componentes me van a ayudar a reducir aún más el código
+
+import { useFormik,Field,Form,ErrorMessage } from "formik";
+
+Estos componentes en el background crearán un context con createContext.Usarán el patrón RenderProps,con el cual puedo devolver un hijo como una función que retorne el componente.
+
+IMPORTANTE: fijate que usar el HOC <Formik> internamente llamará al useFormik,y por ello no tengo que llamarlo explicitamente:
+Puedo ver que me devuelve un JSX:
+
+(alias) function Formik<Values extends FormikValues = FormikValues, ExtraProps = {}>(props: FormikConfig<Values> & ExtraProps): JSX.Element
+
+NOTA: <Formik> necesita ciertos atributos,incluso puedo autocompletarlos:
+
+<Formik >
+{ formik => (<Form>...</Form>)}
+</Formik>
+
+Puedo ver que me pide los children,los initialValues,validationSchema y onSubmit,obviamente para pasarselo al hook.Asi que ya puedo borrar el hook.
+Obviamente gestionar esto con sus componentes ya lo convierte en un juego de niños:
+
+<Formik initialValues={{...}} onSubmit={...} validationSchema={{Yup.object()}}>
+ {({ touched, errors }) => (
+          <Form>
+            <label htmlFor="firstName">First Name</label>
+            <Field type="text" name="firstName"
+              className={
+                touched.firstName && errors.firstName ? "has-error" : ""
+              }
+            />
+            <ErrorMessage name="firstName" />
+
+Fijate que puedo pasar a los children todas las propiedades que ya tenia acceso antes con el hook(recuerda que <Formik> llama a useFormik),asi que las paso a los hijos.Form no necesita onSubmit,pues estamos en un contexto aislado,efímero y local.Field sólo necesita el name,lo mismo que ErrorMessage.Increible.
+
+NOTA:puedo ver que ErrorMessage pintará un simple string por pantalla.Para poder estilizarlo como lo teniamos antes tengo que decirle que es un span.Lo puedo hacer con la propiedad component:
+<ErrorMessage name="firstName" component="span"> <- podria pasasrle div | p ...
+En cuanto le diga que es un span cogerá la regla de estilos que apuntaba a los span.
+
+Todavía nos queda ver que pasa con un checkbox o un select,que son tags imprescindibles en formularios.Lo importante de este video era entender que Formik crea un contexto y que llama al hook entre bambalinas,etc...
+
+			VIDEO 138 FORMIK - SELECTS Y INPUTS TYPE CHECKBOX
+
+Field por defecto va a pintar un input type text,pero le puedo pasar el atributo as con otros valores:
+
+// <textarea className="form-textarea"/></textarea>
+ <Field name="message" as="textarea" className="form-textarea" />
+ 
+ // <select className="my-select"/>
+ <Field name="colors" as="select" className="my-select">
+   <option value="red">Red</option>
+   <option value="green">Green</option>
+   <option value="blue">Blue</option>
+ </Field>
