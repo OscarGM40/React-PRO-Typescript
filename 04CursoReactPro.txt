@@ -1,0 +1,18 @@
+					SECCION 11 FORMIK DYNAMIC Y CUSTOM FORMS
+
+Esta seccion tiene por objetivo construir formularios dinámicos,por ejemplo desde un backend mandando un JSON.Será un archivo pues el que defina el formulario.
+
+Esta sección tomaremos el conocimiento aprendido sobre Formik y crearemos formularios dinámicos basados en data en formato JSON. Aquí aprenderemos:
+
+1- Construir inputs de forma dinámica
+2- Construir validaciones basados en propiedades
+3- Selects, Inputs
+4- Ideas para validaciones
+
+Es una sección corta, pero bastante solicitada, el objetivo principal de la misma es que tengamos la idea de formularios dinámicos y que logremos adaptarlo a nuestras necesidades particulares.
+
+					VIDEO 146 CONTINUACION DEL PROYECTO
+
+
+
+

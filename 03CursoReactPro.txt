@@ -945,14 +945,169 @@ Todavía nos queda ver que pasa con un checkbox o un select,que son tags impresc
 
 			VIDEO 138 FORMIK - SELECTS Y INPUTS TYPE CHECKBOX
 
-Field por defecto va a pintar un input type text,pero le puedo pasar el atributo as con otros valores:
+Realmente en un formulario habrá textareas,checkbox,cajas de selección(selects)...Hay que tener en cuenta que Field por defecto va a pintar un input type text,pero le puedo pasar la propiedad as="type" con otros valores(textarea | select ):
 
-// <textarea className="form-textarea"/></textarea>
+Ejemplos y lo que sería su representación en HTML
+// <textarea className="form-textarea"/></textarea> 
  <Field name="message" as="textarea" className="form-textarea" />
  
  // <select className="my-select"/>
  <Field name="colors" as="select" className="my-select">
    <option value="red">Red</option>
-   <option value="green">Green</option>
    <option value="blue">Blue</option>
  </Field>
+
+// <input type="checkbox">
+ <label>
+    <Field type="checkbox" name="terms" />
+     Terms and Conditions
+ </label>
+
+Bien,realmente sólo sería agregar dos campos más,con sus validaciones:
+  <Formik
+        initialValues={{
+          firstName: "",
+          lastName: "",
+          email: "",
+          terms:false,
+          jobType:''
+        }}
+
+Si por ejemplo quiero que acepten el checkbox:
+  terms: Yup.boolean().oneOf([true], "debe aceptar los términos"),
+En cuanto al select con required puede valer:
+    jobType: Yup.string().required("debe seleccionar una opción"),
+
+Fijate que esto hace que no haga match la <option value="">,tiene que tener un value la opción.Asi que puedo poner una sin valor:
+  <Field as="select" name="jobType"  >
+     <option value="">Select One...</option> <- está no pasará el required
+     <option value="developer">Developer</option>
+     <option value="designer">Designer</option>
+
+Si además quisiera filtrar valores lo puedo hacer de nuevo con oneOf([]) o notOneOf([]).Siempre llevan un arreglo de valores y el feedback:
+
+  jobType: Yup.string()
+    .required("debe seleccionar una opción")
+    .notOneOf(['it-junior'],'no puede ser IT-Junior'),
+
+Desde luego esta libreria es un must-know en React.
+
+			VIDEO 139 FORMIK - ABSTRACTION USE-FIELD
+
+Todavia podriamos tomar el validationSchema y sacarlo del código a otro punto del mismo archivo o incluso a otro.Eventualmente lo haremos,pero de momento fijemonos en este patrón repetitivo:
+
+<label ...>
+<Field ...
+<ErrorMessage...>
+
+Puedo observar que se repite mucho,se repite para cada control.Siempre que se repite código en teoría hay una manera de abstraerlo para no repetirlo.Lo que vamos a hacer se encuentra en la documentación oficial de Formik.
+
+Bien,creemos un custom inputField que permite resumir esos tres elementos en uno sólo.Formik permite traer mediante un customHook llamado useField las propiedades del contexto del formulario(recuerda que Formik llama a createContext al usarse asi <Formik></Formik> o bien con useFormik,da igual,pues es lo mismo).
+
+Realmente es bastante sencillo,habrá que declarar una interface con lo que quiera pasar a mi componente,en este caso como va a suplantar al <label>,<input> y <ErrorMessage podría ser algo asi:
+
+interface Props {
+  label: string,
+  name: string,
+  type?: "text" | "email" | "password",
+  placeholder?: string,
+  id: string,
+  [x:string]:any,
+}
+Ahora tipo las props y las paso al hook suyo.
+const MyTextInput = (props: Props) => {
+
+  const [field, meta] = useField(props);
+Con estas props se las mando a su hook y de alli puedo sacar el field(name,placeholder,type,... y la metadata.En la metadata tendré si ha sido tocado,si hay errores,...
+
+Sabiendo todo esto ya puedo crear la label,con el htmlFor apuntando al id si viene y sino al name y con el input recogiendo todos los fields y las props que pueda querer mandar(fijate en el uso de [x:string]:any):
+
+      <label htmlFor={props.id || props.name}>{label}</label>
+      <input {...field} {...props} />
+
+Y por último compruebo mediante ese objeto meta que las condiciones para mostrar los errores sean touched y hasError,como siempre:
+
+ {
+     meta.touched && meta.error && (
+          <span className="error">{meta.error}</span>
+)}
+
+NOTA: definir una prop asi la hace opcional por naturaleza([x:string]:any)
+Ahora si,ya puedo usar mi custom Component:
+
+<MyTextInput
+      label="First Name"
+      name={"firstName"}
+      placeholder="First Name"
+    />
+
+    <MyTextInput
+      label="Last Name"
+      name={"lastName"}
+      placeholder="Last Name"
+    />
+    <MyTextInput
+      label="Email"
+      type="email"
+      name="email"
+      placeholder="Email"
+  />
+Puedo aprovecharme que son text por defecto,etc.Mucho más fácil y sencillo.Puedo observar que mediante ese hook useField(props) le estoy pasando correctamente todo,el onChange,el onBlur,los values,touched,errors,...
+Desde luego es una abstracción muy útil,aunque falta ver como hacer lo mismo con los select o checkbox...
+
+					VIDEO 140 CUSTOM SELECT
+
+La diferencia será que tiene as="select",aunque como va a ser otro Componente especializado para Select no hará falta.Lucirá asi:
+
+interface Props {
+  label: string;
+  name: string;
+  id?: string;
+  [x: string]: any;
+}
+
+/* {label, ...rest} <-operador rest asi { ...rest} vuelve a juntar,asinto,por eso luego las puedo esparcir */
+const MySelect = ({label,...props}: Props) => {
+  const [field, meta] = useField(props);
+
+  return (
+    <>
+      <label htmlFor={props.id || props.name}>{label}</label>
+      <select {...field} {...props} />
+      {meta.touched && meta.error && (
+        <span className="error">{meta.error}</span>
+      )}
+    </>
+  );
+};
+
+*La pregunta es,donde están los values o los options??Realmente no hace falta pasarlos,simplemente debo usar este componente englobando a los <options>:
+
+ <MySelect label="Choose your job Type" name="jobType" >
+      <option value="">Select One...</option>
+      <option value="developer">Developer</option>
+      <option value="designer">Designer</option>
+      <option value="it-senior">It Senior</option>
+      <option value="it-junior">It Junior</option>
+  </MySelect>
+Se le puede pasar multiple a true o disabled,hay que cambiar los initialValues y las validaciones en tal caso
+
+				VIDEO 141 FORMIK CUSTOM CHECKBOX
+
+Es prácticamente igual,salvo que el label no necesita el htmlFor:
+
+const MyCheckbox = ({ label, ...props }: Props) => {
+  const [field, meta] = useField({...props,type:'checkbox'});
+
+  return (
+    <>
+      <label >
+      <input type="checkbox" {...field} {...props} />
+        {label}
+      </label>
+
+				VIDEO 142 PEQUEÑAS OPTIMIZACIONES
+
+
+
+

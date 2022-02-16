@@ -1,19 +1,20 @@
-import { useFormik, Field, Form, Formik, ErrorMessage } from "formik";
+import { Field, Form, Formik, ErrorMessage } from "formik";
 import * as Yup from "yup";
+import MyCheckbox from "../components/MyCheckbox";
+import MySelect from "../components/MySelect";
+import MyTextInput from "../components/MyTextInput";
 import "../styles/styles.css";
 
-const FormikComponents = () => {
+const FormikAbstraction = () => {
   return (
     <div>
-      <h1>Formik Components</h1>
-
       <Formik
         initialValues={{
           firstName: "",
           lastName: "",
           email: "",
           terms: false,
-          jobType: "",
+          jobType: [],
         }}
         onSubmit={(values) => console.log(values)}
         validationSchema={Yup.object().shape({
@@ -29,58 +30,53 @@ const FormikComponents = () => {
             .email("debe ser un email válido")
             .required("required"),
           terms: Yup.boolean().oneOf([true], "debe aceptar los términos"),
-          jobType: Yup.string()
-          .required("debe seleccionar una opción")
-          .notOneOf(['it-junior'],'no puede ser IT-Junior'),
+          jobType: Yup.array()
+            .of(Yup.string().required("selecciona una opcion valida"))
+            .min(1, "debes seleccionar al menos una opcion"),
+          // .notOneOf("it-junior", "no puede ser IT-Junior"),
         })}
       >
         {({ touched, errors }) => (
           <Form>
-            <label htmlFor="firstName">First Name</label>
-            <Field
-              type="text"
-              name="firstName"
+            <MyTextInput
+              label="First Name"
+              name={"firstName"}
               className={
                 touched.firstName && errors.firstName ? "has-error" : ""
               }
+              placeholder="First Name"
             />
-            <ErrorMessage name="firstName" component="span" />
 
-            <label htmlFor="lastName">Last Name</label>
-            <Field
-              type="text"
-              name="lastName"
+            <MyTextInput
+              label="Last Name"
+              name={"lastName"}
               className={touched.lastName && errors.lastName ? "has-error" : ""}
+              placeholder="Last Name"
             />
-            <ErrorMessage name="lastName" component="span" />
-
-            <label htmlFor="email">Email Address</label>
-            <Field
+            <MyTextInput
+              label="Email"
               type="email"
               name="email"
-              className={touched.email && errors.email ? "has-error" : ""}
+              className={touched.lastName && errors.lastName ? "has-error" : ""}
+              placeholder="Email"
             />
-            <ErrorMessage name="email" component="span" />
 
-            <label>
-              <Field type="checkbox" name="terms" />
-              Terms and Conditions
-            </label>
-            <ErrorMessage name="terms" component="span" />
+            <MyCheckbox label="Terms and Conditions" name="terms" />
 
-            <label htmlFor="jobType">Job Type</label>
-            <Field
-              as="select"
+            <MySelect
+              label="Choose your job Type"
               name="jobType"
+              multiple={true}
               className={touched.jobType && errors.jobType ? "has-error" : ""}
             >
-              <option value="">Select One...</option>
+              <option disabled value="">
+                Select One or More
+              </option>
               <option value="developer">Developer</option>
               <option value="designer">Designer</option>
               <option value="it-senior">It Senior</option>
               <option value="it-junior">It Junior</option>
-            </Field>
-            <ErrorMessage name="jobType" component="span" />
+            </MySelect>
 
             <button type="submit">Submit</button>
           </Form>
@@ -90,4 +86,4 @@ const FormikComponents = () => {
   );
 };
 
-export default FormikComponents;
+export default FormikAbstraction;
