@@ -1,6 +1,7 @@
-import { useFormik, Field, Form, Formik, ErrorMessage } from "formik";
+import { Field, Form, Formik, ErrorMessage } from "formik";
 import * as Yup from "yup";
 import "../styles/styles.css";
+
 
 const FormikComponents = () => {
   return (
@@ -30,8 +31,8 @@ const FormikComponents = () => {
             .required("required"),
           terms: Yup.boolean().oneOf([true], "debe aceptar los términos"),
           jobType: Yup.string()
-          .required("debe seleccionar una opción")
-          .notOneOf(['it-junior'],'no puede ser IT-Junior'),
+            .required("debe seleccionar una opción")
+            .notOneOf(["it-junior"], "no puede ser IT-Junior"),
         })}
       >
         {({ touched, errors }) => (
@@ -90,4 +91,5 @@ const FormikComponents = () => {
   );
 };
 
-export default FormikComponents;
+export { FormikComponents };
+

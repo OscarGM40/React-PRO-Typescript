@@ -1108,6 +1108,37 @@ const MyCheckbox = ({ label, ...props }: Props) => {
 
 				VIDEO 142 PEQUEÑAS OPTIMIZACIONES
 
+PRIMERA: La primera refactorización que vamos a hacer es arreglar esto:
+import MyCheckbox from "../components/MyCheckbox";
+import MySelect from "../components/MySelect";
+import MyTextInput from "../components/MyTextInput";
 
+Puedo ver que todos ellos vienen del mismo paquete.Esta vez sólo son tres,pero podrian ser 8 o 15.La manera más fácil de hacer esto es crear un index.ts en el directorio correspondiente y exportarlo:
+
+export { MyCheckbox } from "./MyCheckbox";
+export { MySelect } from "./MySelect";
+export { MyTextInput } from "./MyTextInput";
+
+Ojo,que esto necesita named exported en los componentes:
+
+import { MyCheckbox, MySelect, MyTextInput } from "../components";
+
+Siempre debo importar con nombre,es mucho mejor despues,a no ser que requiera lapor default.
+
+SEGUNDA: realmente no es necesario usar la parte del meta al usar useFields:
+  const [field ] = useField(props);
+     <>
+      <label htmlFor={props.id || props.name}>{label}</label>
+      <select {...field} {...props} />
+      <ErrorMessage name={props.name} component="span" />
+    </>
+Sin embargo,debo recordar que existe,y que podria acceder al tipo de error mediante él o al touched,en vez de usar ErrorMessage(que ya lo gestiona sólo)
+
+TAREA: arreglar esto:
+import FormikAbstraction from "../03-forms/pages/FormikAbstraction";
+import FormikBasicPage from "../03-forms/pages/FormikBasicPage";
+import FormikComponents from "../03-forms/pages/FormikComponents";
+import FormikYupPage from "../03-forms/pages/FormikYupPage";
+import RegisterPage from "../03-forms/pages/RegisterPage";
 
 

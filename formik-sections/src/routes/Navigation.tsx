@@ -4,11 +4,14 @@ import {
   Route,
   NavLink,
 } from "react-router-dom";
-import FormikAbstraction from "../03-forms/pages/FormikAbstraction";
-import FormikBasicPage from "../03-forms/pages/FormikBasicPage";
-import FormikComponents from "../03-forms/pages/FormikComponents";
-import FormikYupPage from "../03-forms/pages/FormikYupPage";
-import RegisterPage from "../03-forms/pages/RegisterPage";
+import {
+  FormikAbstraction,
+  FormikBasicPage,
+  FormikComponents,
+  FormikYupPage,
+  RegisterFormikPage,
+  RegisterPage,
+} from "../03-forms/pages";
 
 import logo from "../logo.svg";
 
@@ -61,26 +64,36 @@ export const Navigation = () => {
             </li>
             <li>
               <NavLink
-                to="/users"
+                to="/formik-register"
                 className={(props) => (props.isActive ? "nav-active" : "")}
               >
-                Users
+                Register Using Formik
               </NavLink>
             </li>
           </ul>
         </nav>
 
         <div className="main-content">
-          <Routes >
+          <Routes>
             <Route path="/about" element={<h1>About</h1>}></Route>
             <Route path="/formik-basic" element={<FormikBasicPage />}></Route>
             <Route path="/formik-yup" element={<FormikYupPage />}></Route>
-            <Route path="/formik-components" element={<FormikComponents />}></Route>
-            <Route path="/formik-abstraction" element={<FormikAbstraction />}></Route>
+            <Route
+              path="/formik-components"
+              element={<FormikComponents />}
+            ></Route>
+            <Route
+              path="/formik-abstraction"
+              element={<FormikAbstraction />}
+            ></Route>
+            <Route
+              path="/formik-register"
+              element={<RegisterFormikPage />}
+            ></Route>
             <Route path="/register" element={<RegisterPage />}></Route>
           </Routes>
-                </div>
         </div>
+      </div>
     </Router>
   );
 };

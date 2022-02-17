@@ -11,8 +11,18 @@ Esta sección tomaremos el conocimiento aprendido sobre Formik y crearemos formu
 
 Es una sección corta, pero bastante solicitada, el objetivo principal de la misma es que tengamos la idea de formularios dinámicos y que logremos adaptarlo a nuestras necesidades particulares.
 
-					VIDEO 146 CONTINUACION DEL PROYECTO
+					VIDEO 147 TAREA REGISTER FORM CON FORMIK
 
+Copiamos el register y la tarea es pasar todo a Formik.
+NOTA:fijate que el onSubmit puede ser asincrono sin ningun problema:
+   onSubmit={ async (values) => await ...}
 
+IMPORTANTE: para hacer referencias a otros controles se usa Yup.ref('fieldName'):
+  password2: Yup.string()
+    .required("Required")
+    .min(6, "Must be 6 characters or more")
+    .oneOf([Yup.ref("password1"), null], "Passwords must match"), 
 
+Para resetear ya me dan la funcion handleReset,aunque yo usé la propiedad resetForm:
+  <button type="button" onClick={() => formik.resetForm()}>
 

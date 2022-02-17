@@ -9,7 +9,7 @@ interface FormState {
 }
 
 const RegisterPage = () => {
-  const { formData, onChange, reset,isValidEmail } = useForm<FormState>({
+  const { formData, onChange, reset, isValidEmail } = useForm<FormState>({
     name: "",
     email: "",
     password1: "",
@@ -59,7 +59,9 @@ const RegisterPage = () => {
           placeholder="Password"
         />
         {password1.trim().length <= 0 && <span>Este campo es necesario</span>}
-        {password1.trim().length < 6 && password1.trim().length > 0 && <span>La contraseña es demasiado corta</span>}
+        {password1.trim().length < 6 && password1.trim().length > 0 && (
+          <span>La contraseña es demasiado corta</span>
+        )}
         <input
           type="password"
           name="password2"
@@ -68,7 +70,9 @@ const RegisterPage = () => {
           placeholder="Repeat password"
         />
         {password2.trim().length <= 0 && <span>Este campo es necesario</span>}
-        {password1 !== password2 && password2.trim().length > 0 && <span>Las contraseñas no coinciden</span>}
+        {password1 !== password2 && password2.trim().length > 0 && (
+          <span>Las contraseñas no coinciden</span>
+        )}
         <button type="submit">Create</button>
         <button type="button" onClick={reset}>
           Reset
@@ -78,4 +82,4 @@ const RegisterPage = () => {
   );
 };
 
-export default RegisterPage;
+export { RegisterPage };

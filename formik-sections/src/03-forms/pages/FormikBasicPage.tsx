@@ -10,7 +10,6 @@ interface FormValues {
 const re: RegExp = /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,4}$/i;
 
 const FormikBasicPage = () => {
-  
   const validate = ({ firstName, lastName, email }: FormValues) => {
     const errors: FormikErrors<FormValues> = {};
 
@@ -50,7 +49,6 @@ const FormikBasicPage = () => {
 
   return (
     <div>
-      
       <h1>Formik Basic Tutorial</h1>
 
       <form noValidate={true} onSubmit={handleSubmit}>
@@ -75,7 +73,7 @@ const FormikBasicPage = () => {
           value={values.lastName}
         />
         {touched.lastName && errors.lastName && <span>{errors.lastName}</span>}
-        
+
         <label htmlFor="email">Email Address</label>
         <input
           type="email"
@@ -92,4 +90,4 @@ const FormikBasicPage = () => {
   );
 };
 
-export default FormikBasicPage;
+export { FormikBasicPage };
