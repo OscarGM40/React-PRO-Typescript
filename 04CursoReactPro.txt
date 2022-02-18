@@ -26,3 +26,133 @@ IMPORTANTE: para hacer referencias a otros controles se usa Yup.ref('fieldName')
 Para resetear ya me dan la funcion handleReset,aunque yo usé la propiedad resetForm:
   <button type="button" onClick={() => formik.resetForm()}>
 
+					VIDEO 148 FORMULARIOS DINÁMICOS
+
+El objetivo de los formularios dinámicos es que realmente sean dinámicos,es decir,que sean creados en tiempo de ejecución,al recibir el json.
+
+Como ese JSON puede lucir de cualquier forma,habrá que crear un standar con las bases.Por ejemplo,un input puede lucir asi:
+[
+  {
+    "type":"input",
+    "name":"firstName",
+    "placeholder":"Enter First Name",
+    "label":"First Name",
+    "value":""
+  }
+]
+
+Ya sólo es traerlo al Javascript.Obviamente faltan los demás campos y en la realidad esto será la repuesta http de un backend...:
+import formJson from './../data/custom-form.json';
+
+Realmente iterar sobre este json es muy fácil:
+  {(formik) => (
+          <Form>
+            {formJson.map( (field) => {
+              return (
+                <MyTextInput
+                  key={field.name}
+                  type={field.type as any}
+                  label={field.label}
+                  name={field.name}
+                  placeholder={field.placeholder}
+                />
+              );
+            })}
+Lo dificil va a ser sacar los initialValues de forma dinámica.
+
+			VIDEO 149 CREANDO EL INITIAL VALUES DE FORMA DINÁMICA
+
+Fijate que al no tener los initialValues tengo el error de que React intenta controlar un componente no controlado.Esto es porque faltan los initialValues.
+Si bien fernando usó un ciclo for of con un map sin retornar nada también vale:
+
+const initialValues:{[x:string]:any} = {};
+
+formJson.map( (field) => {
+  initialValues[field.name] = field.value;
+})
+Fijate que especificar que las propiedades van a ser cualquier key de tipo string es muy correcto => { [x:string]: any } <- any porque pueden ser numeros o booleans
+
+Bien,ahora que sabemos cargar los initialValues dinámicamente falta ver como cargar un <select> u otro tipo de control:
+
+				VIDEO 150 CARGAR SELECTS DE MANERA DINÁMICA
+
+EL JSON para el select va a ser un poco diferente,ya que tendrá un campo options y no lleva placeholder,claro:
+  {
+    "type": "select",
+    "name": "favoriteGame",
+    "label": "Favorite Game",
+    "value": "",
+    "options": ["League of Legends", "Fortnite", "Overwatch", "Dota 2"]
+  }
+NOTA:fijate que input type="input" crea un input type="text".Esto nos vino genial.Es importante entender que lo importante sería estandarizar la entrada por JSON,obviamente debe ser la misma.
+
+En este punto ya no puedo devolver otro input,debo determinar el tipo de control primero:
+   {formJson.map( (field) => { return ( <MyTextInput <- necesito saber el tipo
+
+Fijate que nunca deberia ver este span:
+ return <span>Type: {type} no es soportado</span>
+
+Al final es igual de sencillo que los demás:
+   if (type === "select") {
+    return (
+      <MySelect key={name} name={name} label={label}>
+        {options?.map((option) => (
+    <option key={option.id} value={option.label}>
+      {option.label}
+    </option>
+        ))}
+      </MySelect>
+
+Por último,necesitamos las validaciones dinámicas también.En este punto podria usar validate o validationSchema con Yup.
+
+				VIDEO 151 VALIDACIONES DINÁMICAS
+
+Obviamente,solo se trata de añadir un campo más,aunque será un arreglo de objetos,pues puede haber muchas validaciones:
+
+  {
+    "type": "input",
+    "name": "firstName",
+    "placeholder": "Enter First Name",
+    "label": "First Name",
+    "value": "Fernando",
+    "validations": [
+      {
+        "type": "required",
+        "message": "First Name is required"
+      }
+    ]
+  },
+
+Ahora viene lo dificil que es automatizar esto:
+
+const initialValues: { [x: string]: any } = {};
+
+const requiredFields: { [x: string]: any } = {} as unknown as any; 
+
+formJson.map((field) => {
+  initialValues[field.name] = field.value;
+  
+  let schema = Yup.string();
+
+  if (field.validations !== undefined) {
+    for(let rule of field.validations) {
+      if(rule.type ==="required"){
+        schema = schema.required(rule.message);
+      }else if (rule.type === "minLength") {
+        schema = schema.min((rule as any).value || 1, rule.message);
+      } else if (rule.type === "email") {
+        schema = schema.email(rule.message);
+      }
+
+    }
+
+    requiredFields[field.name] = schema;
+  }
+
+});
+
+const validationSchema = Yup.object().shape({...requiredFields});
+
+Puedo observar que quitando un par de zonas dificiles es bastante sencillo crear formularios dinámicos y,desde luego,parece bastante útil.
+
+Claro que aun faltan muchas cosas,de momento queda asi.Crear nueva rama y dejarla como 'dynamic-forms'.

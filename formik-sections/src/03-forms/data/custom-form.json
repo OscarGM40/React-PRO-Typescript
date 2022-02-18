@@ -1,0 +1,89 @@
+[
+  {
+    "type": "input",
+    "name": "firstName",
+    "placeholder": "Enter First Name",
+    "label": "First Name",
+    "value": "",
+    "validations": [
+      {
+        "type": "required",
+        "message": "First Name is required"
+      },
+      {
+        "type": "minLength",
+        "message": "First Name must be at least 3 characters",
+        "value": 3
+      }
+    ]
+  },
+  {
+    "type": "input",
+    "name": "lastName",
+    "placeholder": "Enter Last Name",
+    "label": "Last Name",
+    "value": "",
+    "validations": [
+      {
+        "type": "required",
+        "message": "Last Name is required"
+      },
+      {
+        "type": "minLength",
+        "message": "Last Name must be at least 2 characters",
+        "value": 2
+      }
+    ]
+  },
+  {
+    "type": "email",
+    "name": "email",
+    "placeholder": "Enter Your Email",
+    "label": "Mail Address",
+    "value": "",
+    "validations": [
+      {
+        "type": "required",
+        "message": "Email is required"
+      },
+      {
+        "type": "email",
+        "message": "Email must be valid"
+      }
+    ]
+  },
+  {
+    "type": "select",
+    "name": "favoriteGame",
+    "label": "Favorite Game",
+    "value": "",
+    "validations": [
+      {
+        "type": "required",
+        "message": "Favorite Game is required"
+      }
+    ],
+    "options": [
+      {
+        "id": 1,
+        "label": "Select an Option"
+      },
+      {
+        "id": 2,
+        "label": "League of Legends"
+      },
+      {
+        "id": 3,
+        "label": "Fortnite"
+      },
+      {
+        "id": 4,
+        "label": "Overwatch"
+      },
+      {
+        "id": 5,
+        "label": "Dota 2"
+      }
+    ]
+  }
+]
