@@ -20,7 +20,8 @@ export default {
       },
     },
     allCaps: { control: { type: 'boolean', }, },
-    fontColor: { control: 'color' }
+    fontColor: { control: 'color' },
+    backgroundColor: { control: 'color' },
   },
 
 } as ComponentMeta<typeof MyLabel>
@@ -64,3 +65,11 @@ CustomFontColor.args = {
   size: 'h1',
   fontColor: '#5517ac'
 }
+
+export const CustomBackgroundColor = Template.bind({});
+CustomBackgroundColor.args = {
+  label: "Custom Font Color",
+  size: "h1",
+  fontColor: "#5517ac",
+  backgroundColor: "#000"
+};

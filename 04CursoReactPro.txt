@@ -330,4 +330,144 @@ IMPORTANTE: para storybook un comentario es insignificante asi que no va a re-bu
 
 			VIDEO 162 TAREA PROPIEDADES Y CONTROLES ADICIONALES
 
+Realmente no tiene mucho,todo depende de lo que quiera,estilizarlo:
+
+export const Basic = Template.bind({});
+Basic.args = {
+  size: 'normal',
+  allCaps: false,
+  color: 'primary'
+}
+
+export const AllCaps = Template.bind({});
+AllCaps.args = {
+  label: 'ALL CAPS',
+  size: 'normal',
+  allCaps: true,
+  color: 'primary'
+}
+
+export const Secondary = Template.bind({});
+Secondary.args = {
+  label: 'Secondary',
+  size: 'normal',
+  color: 'secondary'
+}
+
+export const Tertiary = Template.bind({});
+Tertiary.args = {
+  label: 'Tertiary',
+  size: 'normal',
+  color: 'tertiary'
+}
+
+const MyLabel = ({
+  label = "No Label",
+  size = "normal",
+  color = "primary",
+  allCaps = false,
+}: LabelProps) => {
+  return (
+    <span
+      className={`label ${size} text-${color} ${allCaps ? "uppercase" : ""}`}
+    >
+      {label}
+    </span>
+  );
+
+IMPORTANTE: no es buena idea dejar todo como sale por la interfaz web,ya que saca siempre <input type="checkbox">.Esto obviamente no es siempre lo que querré.
+Storybook trata de hacer lo mejor posible,si el campo es un boleano pone un selector de true,false pero siempre puedo usar el selector que yo quiera con la propiedad argTypes:
+
+				VIDEO 163 NUEVA PROPIEDAD - COLOR DE FUENTE
+
+Es una tarea en la que meter un <input type="color">.Realmente es muy sencillo,simplemente le paso ese argTypes:
+
+  fontColor: { control: 'color' }
+Y la nueva página será un h1
+export const CustomFontColor = Template.bind({});
+Tertiary.args = {
+  label: 'Custom Font Color',
+  size: 'h1',
+  fontColor: 'tertiary'
+}
+
+Lo más fácil es usar un estilo en línea:
+ style={{ color: fontColor }}
+
+				VIDEO 164 DESPLEGAR STORYBOOK A SERVIDORES
+
+Digamos que ya tengo listo el componente y lo quiero subir a la Cloud.También veré como aprobar o cancelar cambios de manera colaborativa en Storybook.
+
+						PASOS A SEGUIR
+
+UNO: hacer el build(comando build-storybook).Esto crea la carpeta storybook-static.Esta es la carpeta importante.
+Puedo hacer una prueba con la libreria http-server(npm i -g http-server)
+live-server storybook-static --port=3000(usaré live-server)
+
+DOS: desplegarlo(puedo arrastar esa carpeta en Netlify,por ejemplo).
+
+Como puedo observar no puede ser más fácil desplegar un componente con storybook(fijate que creó un index.html)
+
+				VIDEO 165 GITHUB Y GITHUB PAGES
+
+Este despliegue no es opcional ya que en la siguiente ección vamos a ver despliegues automáticos con GitHubActions.
+Asi pues creo un repo,se recomienda que sea público para aceptar PRs
+
+NOTA: no debo subir esta carpeta asi que tengo que ignorarla.No tiene sentido subirla ya que se va a generar mediante un despliegue automático:
+/storybook-static
+
+Lo que si que hago es cambiarle el nombre de la carpeta a docs asi ya puedo configurar GitHub Pages.
+
+					VIDEO 166 BONUS: CHROMATIC 
+
+La integración de Storybook con Chromatic es muy buena.Es una herramienta colaborativa .Bien,hago el signup con GitHub y eligo entre crear nuevo proyecto o elegirlo desde GitHub.
+Eligo el repo recién creado.
+
+PASOS PARA USAR CHROMATIC EN UN PROYECTO
+UNO:habrá que instalar en modo dev el paquete chromatic en el proyecto:
+npm i -D chromatic
+
+DOS: publicar el storybook mediante chromatic con el token único que tiene cada proyecto:
+npx chromatic --project-token=8801b679c19d
+
+Debería de haber podido publicar una Storybook con Chromatic
+
+			VIDEO 167 CHROMATIC - ATRAPAR CAMBIOS EN LA UI
+
+Vamos a hacer algun cambio en nuestro storybook para analizar que sucede en Chromatic.Levanto storybook en local y realizo algun cambio,por ejemplo un custom color para el background:
+
+export const CustomBackgroundColor = Template.bind({});
+CustomBackgroundColor.args = {
+  label: "Custom Font Color",
+  size: "h1",
+  fontColor: "#5517ac",
+  backgroundColor: "#000"
+};
+
+Una vez vea en local que está todo correcto puedo hacer el re-deploy a chromatic con el mismo comando(npm run chromatic).Hay que hacer el push a GitHub antes.
+
+Bien,esto creará un segundo Build en chromatic(fijate que puedo invitar a teammates).Voy a ese segundo Build y debo revisarlo(review changes).Fijate que puedo crear usuarios y roles en chromatic.
+Veré los cambios y puedo agregar marcadores con texto,muy útil,ya que podrá crear un marcador cualquier colaborador.
+Esto es sólo una pincelada de Chromatic,parece una buena librería colaborativa para usar con storybook,aunque parece que hay que pagar por las features mas interesantes.
+
+SECCION 13 GITHUB ACTIONS+SEMANTING VERSIONING+AUTOMATING NPM DEPLOY+STORYBOOK
+
+Esta sección tiene por objetivo automatizar este workflow,de forma que con un sólo push o un PR se recorra todo el workflow:
+
+Subir a Github los cambios
+Crear release-semántico
+Transferir esta release a npm (npm publish)
+
+Esta sección es genial, aprenderemos lo siguiente:
+1- Tomar nuestros componentes probados con Storybook
+2- Generar los archivos de definición de TypeScript
+3- Generar el build de producción
+4- Crear una acción en Github actions para crear el versionamiento semántico
+5- Usar el versionamiento semantico para publicar la version del paquete
+6- Publicar el paquete en NPM
+7- Actualizar paquete
+8- Consumir el paquete en aplicaciones externas.
+
+			VIDEO 171 CONTINUACION DE LA SECCION - EDITING PACKAGE.JSON
+
 

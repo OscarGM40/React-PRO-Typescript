@@ -11,6 +11,9 @@ interface LabelProps {
   color?: "primary" | "secondary" | "tertiary";
   /** establecer color mediante selector */
   fontColor?: string;
+  /** establecer color mediante selector */
+  backgroundColor?: string;
+
 }
 /**
  * Etiqueta hyper-complicada
@@ -21,11 +24,12 @@ const MyLabel = ({
   color = "primary",
   allCaps = false,
   fontColor, 
+  backgroundColor='transparent'
 }: LabelProps) => {
   return (
     <span
       className={`label ${size} text-${color} ${allCaps ? "uppercase" : ""} `}
-      style={{ color: fontColor }}
+      style={{ color: fontColor, backgroundColor }}
     >
       {label}
     </span>
