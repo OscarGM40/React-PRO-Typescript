@@ -1,0 +1,256 @@
+					  REACT ROUTER DOM VERSION 6 BY FAZT
+
+Source: https://www.youtube.com/watch?v=7xRVnmWcTE8
+
+React Router Dom es un paquete de React que nos permite crear un enrutador en nuestra aplicación.Básicamente un enrutador me permite crear URLs,dividiendo mi aplicación como si fueran distintas páginas.
+
+Sin embargo,dado que React o Angular son SPA esto es una simulación,realmente mi aplicación no tiene distintas páginas,es sólo una.
+
+La versión 6 ha sido un breaking change,un cambio brusco desde la 5.
+
+Para agregar rutas hijas tendría que usar esta estructura:
+<Route path="/" element={<App />} >
+  <Route path="sales" element={ <Sales /> } >
+    <Route path="invoices element={ <Invoices /> } >
+      <Route path=":invoice" element={ <Invoice /> } />
+    </Route>
+  </Route>
+</Route>
+
+Fijate que he mezclado self-closing con etiquetas normales.Cada elemento que se declara hijo de otro significa un nivel más en la url.Es decir que la url que estaría creando con este ejercicio sería dominio.com/sales/invoices/65kkht454jk4 
+
+Ya veremos esto más adelante.Creemos el proyecto e instalemos react-router-dom.
+IMPORTANTE: react-router se puede usar con React Native y otros frameworks,pero como yo voy a crear una app en el DOM,es decir en el navegador mi paquete se llama react-router-dom y no react-router a secas.
+>npm i react-router-dom.
+
+				USANDO EL ROUTER DE REACT-ROUTER-DOM
+
+STEP ONE: BROWSER ROUTER
+Para poder empezar a usar este enrutador lo primero es englobar toda la app en este componente.Mucha gente lo renombra,en este proyecto no lo haremos y usaremos BrowserRouter,pero muchos lo renombran a Router(BrowserRouter as Router):
+
+import { BrowserRouter , Route, NavLink } from 'react-router-dom'
+
+function App() {
+  return (
+    <BrowserRouter>
+    	<h1>Hello world</h1>
+    </BrowserRouter>
+  );
+}
+Sin embargo,esto sólo habilita la navegación,pero nada más,cualquier ruta que escriba me devuelve lo mismo.
+
+
+STEP TWO: ROUTES(former Switch) and ROUTE
+
+Para poder cambiar de página y que devuelva un componente concreto está el componente Route.
+Route permite definir una ruta,crear una ruta, y que al visitar esa ruta(URL) se muestre un componente concreto.
+
+Route recibe dos parámetros,el primero es path y es un string con el nombre de la ruta que quiero crear,el segundo es element(antes era component).Element me permite definir el componente a mostrar en esa ruta creada
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Route path="/" element={
+        <div>Hola mundo</div>
+      } />
+    
+    </BrowserRouter>
+  );
+
+Sin embargo,veo que me da fallo.Esto es porque tengo que usar el componente <Routes>(antes Switch).Es el intercambiador de rutas,necesario también para que se pueda cambiar entre rutas.Genial.
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={
+          <div>Hola mundo</div>
+        } />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+}
+Fijate que element me permite includo devolver HTML,claro que normalmente se referencia a un componente entero.
+
+ELEMENT VS COMPONENT:
+En la versión 6 ya no puedo devolve el nombre del componente sino que tengo que devolverlo como una tag HTML,es decir,como un Componente. Además se usa element y no component como atributo:
+
+import HomePage from './pages/HomePage'
+import AboutPage from './pages/AboutPage'
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={ <HomePage /> } /> // ya no se usa component
+        <Route path="/about" element={ <AboutPage /> } />
+      </Routes>
+    </BrowserRouter>
+  );
+}
+Ya no puedo usar element={HomePage} <- debo usar JSX con una tag.
+
+RUTA NOT FOUND:
+Es muy posible que el usuario de mi aplicación navege a una ruta que no existe en  mi aplicación.Para ello se usa el comodín '*' que significa cualquier ruta.
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={ <HomePage /> } />
+        <Route path="/about" element={ <AboutPage /> } />
+        <Route path="/users" element={<UsersPage />} />
+        <Route path="*" element={<NotFoundPage /> } />
+      </Routes>
+    </BrowserRouter>
+Recuerda que ahora es obligatorio,y no opcional,devolver el componente como una tag.Bien,pero como podemos navegar entre rutas? El usuario va a necesitar una forma de navegar entre rutas..
+La forma de solucionar esto es colocar una navegación interna en nuestra aplicación.
+
+COMPONENTE NAVLINK 
+
+Fijate que cambiar de ruta a través de la URL hace que el navegador pida el archivo al server.Esto hay que evitarlo usando la navegación interna simulada del framework.
+* Recuerda que <a href="/about">About</a> hace un refresh en React.
+Para que no haga el refresh hay que usar el componente NavLink.Este componente ya venía en la versión 5,pero ahora tiene un cambio importante(en lugar de usar el atributo href usa 'to,pero esto ya era asi,no?)
+ <NavLink to="/about"> about </NavLink>
+
+Y para estilizar la ruta activa ya no se usa la propiedad activeClassName sino que React-Router-Dom me va a devolver la propiedad boleana isActive en los estilos,asi que puedo estilizar condicionalmente.
+En realidad me devuelve un objeto:
+<NavLink to="/" className={ (data) => console.log(data)}
+
+* Son tres navegaciones(al home y a otros dos diferentes)
+{isActive: true}
+{isActive: false}
+{isActive: false}
+Asi que habrá que desestructurar esa propiedad simplemente y estilizar en base a esa condición:
+
+ <li>
+    <NavLink to="/about">About</NavLink>
+ </li>
+ <li>
+   <NavLink to="/users">Users</NavLink>
+ </li>
+ <li>
+  <NavLink
+    className={({ isActive }) => (isActive ? "active" : "")}
+    to="/">
+    Home
+  </NavLink>
+</li>
+
+* NOTA: parece que con uno sólo ya estilizó todos!.
+Por último NavLink no es la única forma de navegar,también está Link.
+
+LINK
+El próposito de Link es el mismo que el de NavLink,pero no está creado para estilizarlo condicionalmente.Es exactamente igual que NavLink pero sin esa capacidad:
+   <Link to="/users">Users</Link>
+
+IMPORTANTE: Tanto NavLink como Link pueden redireccionar dinámicamente.No tienen porqué ser rutas de mi app tampoco.Para ello puedo usar una expresión JSX:
+
+<Link to={`/users/${userId}	`}> 
+Siempre debo usar la ventaja de poder interpretar código al usar un framework.Profundizemos más en estos params.
+
+PARAMS(minuto 36)
+Los parámetros son algo básico en una aplicación.Para declarar una ruta con un parámetro dinámico no ha cambiado se usa :<paramName>.Ejemplo:
+
+  <Route path="/users/:id" element={<UserPage />} />
+
+Para acceder a los params puedo ejecutar el hook useParams,esto no ha cambiado.Recuerda que todo lo que tiene que ver con el routing viene de ellos,de react-router-dom.
+
+import { useParams } from 'react-router-dom';
+
+const params = useParams();
+
+En params tendré un objeto con los params obligatorios que me haya inventando y lleguen a esta ruta,en este caso sólo llegará un llamado 'id'.
+Normalmente este parámetro se usa para realizar peticiones iniciales a un backend.Veamos ahora como redireccionar automáticamente sin ayuda del usuario.
+
+NAVIGATE y replace
+En versiones anteriores existia Redirect,que se usaba para redireccionar.Desde esta versión ya no existe y se usa Navigate,que es un componente muy similar.
+Navigate es un componente asi que va dentro de element:
+
+   <Route path="/usuarios" element={
+          <Navigate to="/users" />
+        } />
+Navigate es muy útil por ejemplo al redireccionar en un logout.Sin embargo,es muy importante que lo que hace es un push,es decir,que en el historial de rutas tendría que he ido a /usuarios y /users justo inmediatamente después.
+
+Para reemplazar totalmente la url,es decir,que nunca exista /usuarios se usa replace={true} o simplemente replace.Puedo ver que es prácticamente igual al former Redirect.
+
+USENAVIGATE
+También puedo usar esta funcionalidad de navegar a través de un hook.No tengo porqué limitarme al componente <Navigate />.Este nuevo hook useNavigate es el antigüo y extinto desde la v6 hook useHistory.Ahora se llama useNavigate.
+
+const navigate = useNavigate(); <- antes era const history = useHistory().
+
+Para navegar ya no es history.push(url) sino simplemente navigate(url):
+
+  const handleClick = () => {
+    navigate("/users");
+  };
+
+Recuerda que el hook para redireccionar es un hook básico en todad aplicación.
+Este hook permite redireccionar de forma programada(cuando yo quiera).
+
+SUBCOMPONENTES(no recomendado usar)
+Puedo crear subcomponentes en un componente y crearles una ruta.Por ejemplo,queremos devolver un componente para la ruta /dashboard/welcome.
+
+Para hacer esto es realmente sencillo,recuerda que el componente <Route > crea una nueva ruta,asi que puedo usar ese componente donde quiera en mi app(fijate que no estoy limitado al archivo de rutas!)
+
+<Routes>
+   <Route path="welcome" element={<p>Welcome</p>} />
+</Routes>
+
+Claro que esta forma me obliga a usar una wildcard y me desconfigura el 404
+ <Route path="/dashboard/*" element={<Dashboard />} />
+
+Pero ya no entraré aqui al usar /dashboard/sdkflflldf:
+ <Route path="*" element={<NotFoundPage /> } />
+ 
+Es obvio que no es la mejor forma,además que he declarado una ruta en un archivo cualquiera,quedando muy dispersa.No debo separar la lógica para crear rutas.
+
+ES DECIR NO DEBO USAR SUBCOMPONENTES.SIEMPRE DEBO USAR SUBRUTAS
+
+SUBRUTAS Y COMPONENTE OUTLET
+
+La forma recomendada es usar el archivo de rutas y usar <Route> anidados.
+La forma anterior no es ni recomendada ni necesaria,pues ya tendré un archivo para rutas y me estoy trayendo dos veces el intercambiador Routes y Route,etc...
+
+Fijate que el segundo,el interior puedo usar como path "/dashboard/welcome" o simplemente "welcome".Es decir puedo usar la absoluta o la relativa.
+
+ <Route path="/dashboard" element={<Dashboard />} >
+    <Route path="welcome" 
+           element={<h1>Welcome to the dashboard</h1>} />
+  </Route>
+
+Ahora bien ,aún falta un pequeño detalle,pues React no sabe realmente donde pintar ese h1(que será un componente).Sabe que el padre es <Dashboard />,pero,¿donde va ese hijo,arriba,abajo,en la linea 34,...?
+La solución es el componente Outlet.Este componente es como decir,aqui va ese componente:
+
+   <div>
+      <h1>Dashboard</h1>
+      <button
+        onClick={handleClick}>Logout
+      </button>
+      <br /><br />
+      <Outlet />
+    </div>
+
+Lógicamente puedo ponerlo donde quiera,esta vez lo pusimos abajo.En resumen,cualquier <Route> anidada en otra <Route> va a necesitar de <Outlet>.Interesante.
+
+Y por supuesto,puedo usar tantos niveles de anidación en las rutas como quiera.Fijate de nuevo en el ejemplo inicial:
+
+<Route path="/" element={<App />} >
+  <Route path="sales" element={ <Sales /> } >
+    <Route path="invoices element={ <Invoices /> } >
+      <Route path=":invoice" element={ <Invoice /> } />
+    </Route>
+  </Route>
+</Route>
+
+EXACT: en esta versión v6 ya no hace falta usar 'exact'.Esto es porque por ejemplo en la version anterior con este ejemplo:
+<Routes>
+  <Route path="teams/:teamId" element={} />
+  <Route path="teams/new" element{} />
+
+En la versión 5 si visitabamos teams/xxx hacia match con el primero y no podiamos visitar nunca teams/new(lo arreglabamos con exact,llenando el código de exacts.)
+Ahora él controla mediante un algoritmo esto,y puede detectar cuando una ruta es llamada.
+Es decir,que el problema era con dos rutas que empiecen igual,pero una su ruta hija es dinámica y la otra estática,nunca se podia visitar la estática.Esto ha cambiado.Puedo ver que ha sido una mejora esta breaking version.
+
+

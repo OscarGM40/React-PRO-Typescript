@@ -156,3 +156,178 @@ const validationSchema = Yup.object().shape({...requiredFields});
 Puedo observar que quitando un par de zonas dificiles es bastante sencillo crear formularios dinámicos y,desde luego,parece bastante útil.
 
 Claro que aun faltan muchas cosas,de momento queda asi.Crear nueva rama y dejarla como 'dynamic-forms'.
+
+SECCION 12 STORYBOOK-CAMA PARA CREACIÓN Y MANTENIMIENTO DE COMPONENTES Y PAQUETES
+
+Puedo imaginar STORYBOOK como una mesa de construcción,en la cual puedo construir componentes.Empieza como una aplicación de React,pero no termina siendo eso,
+sino que es una zona para construir componentes.
+No sólo eso,sino que puedo jugar con esos componentes,mandarles propiedades,generar documentación automatica,compartir los componentes mediantes enlaces http.
+
+Esta sección está enfocada en aprender como integrar Storybook en nuestras aplicaciones de React para transformarla en una aplicación que nos ayudará a probar y desarrollar de una mejor manera nuestros componentes.
+
+La sección tiene por objectivo aprender:
+
+1- Integrar Storybook en una aplicación de React con Npx
+2- Crear un componente desde cero
+3- Crear historias
+4- Configurar historias
+5- Utilizar varios controles para las properties
+6- Integración con TypeScript
+7- Crear documentaciones de componentes
+8- Desplegar documentación a diferentes sitios
+9- Bonus: Chromatic para desplegar Storybook de forma colaborativa
+
+				VIDEO 156 INICIO PROYECTO - MY STORYBOOK -
+
+IMPORTANTE: Storybook(https://storybook.js.org/) no es algo que esté ligado a un framework en concreto.Puedo usar React,Angular,HMTL,Vue,Ember,...
+
+Lo primero que hay que hacer es crear una aplicación de React(investigar Vite y NextJS):
+npx create-react-app <name> --template=typescript
+
+NOTA: con storybook se trata de crear componentes,no aplicaciones,para despues compartirlos o guardarlos.
+
+			VIDEO 157 INSTALAR Y CONFIGURAR STORY-BOOK EN LA APP
+
+Para añadir storybook debo ejecutar npx sb init(no admite un proyecto vacio):
+>npx sb init
+NOTA:el comando vale para todos los frameworks.
+Esto crerá ciertos componentes de demostración,asi como la cama para manejarlos,etc.Pero antes de ejecutarlo primero hay que limpiar varios archivos y directorios:
+
+NOTA: podriamos haber usado npm eject,pero crea muchos archivos
+UNO: Primero ejecuto esto
+npm remove react-scripts
+DOS: Despues borro todo(carpeta public y todos los files menos el src/index.tsx(seguir video)
+TRES:ahora si,ya puedo ejecutar npx sb init(tarda un rato)
+* puedo ver que puedo ejecutar npm run storybook
+
+CUATRO: antes de ejecutarlo repasemos los cambios.TEngo una nueva carpeta '.storybook' con dos files main.js y preview.js.Son archivos de configuración para agregar addons,plugins,etc para storybook.
+
+También creó un folder 'stories' con varios componentes(cada uno formado por button.css,Button.stories.tsx y Button.tsx).Es decir el componente,sus estilos y un archivo .stories.tsx
+
+CINCO:puedo ver dos nuevos scripts en el package.json:
+  "storybook": "start-storybook -p 6006",
+  "build-storybook": "build-storybook"
+Obviamente,uno es para hacer el build y otro para correr la aplicación(levanta storybook en ese puerto).
+IMPORTANTE:los comandos con react-scripts ya no me valen asi que puedo dejar estos dos,o renombrarlos,etc..
+
+Por último limpio el index.ts ya que tampoco tengo el index.html y no me vale ese código.Ejecuto npm run start | storybook y debería abrirse su interfaz web.
+
+			VIDEO 158 MODULOS DE CSS Y LEVANTAR STORYBOOK
+
+Fijate que Fernando tenia problemas al levantar la app.Le pedia instalar postcss,entre otras cosas(parece que ya lo corrigieron).
+Fernando deja un gist con esto:
+gist: https://gist.github.com/Klerith/c82cbe0c4733184deaddf3421e8acff5
+
+PASO UNO 
+yarn add -D @storybook/addon-postcss postcss css-loader
+
+PASO DOS: en el .storybook.main.js:
+module.exports = {
+  addons: [
+   {
+    name: '@storybook/addon-postcss',
+    options: {
+      postcssLoaderOptions: {
+        implementation: require('postcss'),
+      },
+    },
+  },
+  
+  ]
+}
+PASO TRES: crear el postcss.config.js:
+module.exports = {
+  // Add your installed PostCSS plugins here:
+  plugins: [
+    // require('autoprefixer'),
+    // require('postcss-color-rebeccapurple'),
+  ],
+};
+
+IMPORTANTE: tras levanta exitosamente storybook puedo ver el contenido del  componente Introduction.stories.mdx por pantalla.Esta extensión es MarkDown + XML
+Este lenguaje MDX juntará MarkDown junto a tags xml(<></>).
+
+Bien,en la interfaz puedo cambiar todas las props que se definan en código,en este caso,tres tamaños,el color,el texto de la label y poco más.
+
+NOTA:los comentarios también se reflejan en la interfaz web,asi que puedo y debería documentar el componente:
+
+interface ButtonProps {
+  /**
+   * Is this the principal call to action on the page?
+   */
+  primary?: boolean;
+
+					VIDEO 159 COMPONENTE MY-LABEL
+
+Recuerda que esta app está creada para crear y testear este tipo de componentes,despues subirlos a GitHub y/o desplegarlos a Npm.
+
+IMPORTANTE: Button sería una story y Primary como una página.Asi que minimo necesito una story con su primera página:
+
+import MyLabel from '../../components/MyLabel';
+
+export default {
+  title: 'YourComponent',
+  component: MyLabel,
+};
+
+const Template = () => <MyLabel />;
+
+export const Basic = Template.bind({});
+export const AllCaps = Template.bind({});
+
+IMPORTANTE: Template.bind({}) rompe la referencia.Esto es necesario ya que en JS todo va por referencia.Es la única forma de que sean componentes diferentes.
+
+En cuanto a la jerarquia de archivos todo depende del title:
+export default {
+  title: 'UI/Etiquetas/MyLabel',
+  component: MyLabel,
+};
+Esto meterá las páginas en UI/Etiquetas/MyLabel/... lo cual tiene más sentido que el Example/Button que me dan.
+
+		VIDEO 160 AÑADIR PROPS Y CONTROLES A NUESTRA HISTORIA Y COMPONENTE
+
+Añadir props realmente no es nada que no sepa ya:
+
+interface LabelProps {
+  label: string;
+  size: "normal" | "h1" | "h2" | "h3";
+}
+
+const MyLabel = ({ label = "No Label", size = "normal" }: LabelProps) => {
+  return <span className={`label ${size}`}>{label}</span>;
+};
+
+Sin embargo,esto va a obligar a usar las clases ComponentMeta<T> y ComponentStory<T> de esta forma:
+
+export default {
+  title: 'UI/Etiquetas/MyLabel',
+  component: MyLabel,
+} as ComponentMeta<typeof MyLabel>
+
+const Template: ComponentStory<typeof MyLabel> = (args) => <MyLabel {...args}/>;
+
+Ahora ya no veré el error de TS sobre los args.Y si voy a la interfaz ya puedo elegir el font-size de entre los que he estilizado y establecer el texto de la label dinámicamente.
+
+Sin embargo,puedo ver que faltan muchas cosas,como que venga con valores por defecto.Esto lo lograŕe tras romper la referencia al componente con Template.bind({})  ya que por ejemplo la label AllCaps debería estar en mayúsculas :
+
+export const Basic = Template.bind({});
+Basic.args = {
+  label: 'Basic',
+  size: 'normal',
+}
+
+export const AllCaps = Template.bind({});
+AllCaps.args = {
+  label: 'ALL CAPS',
+  size: 'normal',
+}
+	
+			VIDEO 161 DOCUMENTAR AUTOMÁTICAMENTE LAS DESCRIPCIONES
+
+Todavia faltaría crear un documentación.Ya hemos visto como se hacia.Fijate que una buena documentación será fundamental.
+
+IMPORTANTE: para storybook un comentario es insignificante asi que no va a re-buildear todo.Para ver los cambios tendré que cambiar algo del código o reiniciar el server.
+
+			VIDEO 162 TAREA PROPIEDADES Y CONTROLES ADICIONALES
+
+
