@@ -1,6 +1,6 @@
 import "./myLabel.css";
 
-interface LabelProps {
+export interface LabelProps {
   /** 👇 propiedad para establecer el texto del componente */
   label: string;
   /** Establecer el tamaño del label */
@@ -13,7 +13,6 @@ interface LabelProps {
   fontColor?: string;
   /** establecer color mediante selector */
   backgroundColor?: string;
-
 }
 /**
  * Etiqueta hyper-complicada
@@ -23,8 +22,8 @@ const MyLabel = ({
   size = "normal",
   color = "primary",
   allCaps = false,
-  fontColor, 
-  backgroundColor='transparent'
+  fontColor,
+  backgroundColor = "transparent",
 }: LabelProps) => {
   return (
     <span
@@ -36,4 +35,4 @@ const MyLabel = ({
   );
 };
 
-export default MyLabel;
+export { MyLabel };

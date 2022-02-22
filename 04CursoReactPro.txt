@@ -470,4 +470,89 @@ Esta sección es genial, aprenderemos lo siguiente:
 
 			VIDEO 171 CONTINUACION DE LA SECCION - EDITING PACKAGE.JSON
 
+Bien,recuerda que tengo que poner private a false para desplegar un proyecto.
 
+IMPORTANTE: a la hora de desplegar un paquete es buena idea que me tome algo de tiempo y dejar todo correcto.La propiedad typings indicará los archivos de definición de tipos,main el punto de entrada,homepage o repository son metadata muy importante y license,private,versión,...todo es importante.
+
+Seguiré con la propiedad release que apunta a un arreglo de ramas y files que apunta a un arreglo de directorios o archivos(ambos se admiten).Fijate:
+  "release":{
+    "branches":["master"]
+  },
+  "files":[
+    "dist",
+    "src"
+    "package.json"
+    "README.md"
+  ],
+
+Esto es la base de casi cualquier deploy,pero a nosotros aún nos faltan ciertas configuraciones por estar usando TypeScript.
+
+			VIDEO 172 TSCONFIG.JSON - CONFIGURACIONES PARA TYPESCRIPT
+
+IMPORTANTE: debo tener typescript de manera global.Puedo saber si lo tengo tratando de sacar la version del compilador(tsc --version).Instalar en global con :
+npm i -g typescript ó yarn global add typescript
+
+Bien,hay varias propiedades a configurar o añadir:
+"outDir":"dist"
+"declaration":true <- fijate que ésta es vital,ya que genera los d.ts
+"noEmit:false <- estaba en true,mientras esté en true no emite archivos
+ 
+ "include": [
+    "src"
+  ]
+} <- debo asegurarme que está la propiedad incluce haciendo pinpoint correctly
+
+Bien,hacemos el compilado con 'tsc' y vemos que hay algunos errores por no haber exportado las interfaces ni nosotros ni los de storybook.
+
+IMPORTANTE: recuerda que ni el CSS ni las imagenes se van a mover solas.TSc sólo va a transpilar el TS a JS,nada más.Aún queda este trabajo por hacer.
+
+		VIDEO LIMPIAR-COPIAR ARCHIVOS NECESARIOS AL FOLDER DIST
+
+Vamos a usar dos librerias bastante usadaspara remover carpetas y copiarlas.Son 'rimraf'(para borrar directorios y su contenido) y 'copyfiles'(para copiar archivos masivamente).
+Fijate que no puedo limpiar con rm -rf pues otro usuario podría estar en Windows o Mac,no puedo usar comandos nativos del SO:
+
+yarn add -D rimraf copyfiles
+
+Creo el script "clean" que eliminará la carpeta
+"clean":"rimraf dist/"
+Y lo llamo en el script "build",que hará todo en un único comando:
+"build":"yarn clean
+Bien,lo siguiente es copiar los .css:
+"copy-files":"copyfiles --up 1 src/**/*.css dist/"
+Lo agrego al comando main:
+"build":"yarn clean && tsc && yarn copy-files"
+
+Perfecto.Puedo ver que copió los css al lugar adecuado,respetando su ubicación orginal.
+
+IMPORTANTE: un paso que se dejó Fernando es definir las peerDependencies,que son dependencias necesarias en el equipo para ejecutar este proyecto.En este caso pedimos simplemente cualquier version de React mayor a 16.8 y typescript v4+:
+
+  "peerDependencies": {
+    "react": ">=16.8.0",
+    "typescript": ">=4.0.0"
+  },
+
+				VIDEO 174 SEMANTIC VERSIONING AUTOMÁTICO
+
+El manejo manual del versionamiento semántico es una de las cosas más molestas qeu suele haber.
+NOTA:viendo el proyecto de Stephen veo que puedo usar "typings" o "types" como propiedad para los d types( "types": "./build/index.d.ts",)También observo que usó una licencia ISC(  "license": "ISC",) en vez de MIT.
+El comando npm version <update_type> aumenta el numero de version(patch | major | minor) en base al type que le pase(npm version patch irá 1.0.1,1.0.2,1.0.3...)
+
+En este punto Fernando sugiere usar la libreria npm 'semantic-release' y además agregarle ciertos plugins para expandir funcionalidades:
+>npm i -D semantic-release o yarn add semantic-release -D
+
+Usar estos plugins para trabajar con Semantic Versioning(ya vienen instalados en el paquete anterior):
+En el package.json agregar la propiedad "plugins" con:
+
+"plugins": [
+    "@semantic-release/commit-analyzer",
+    "@semantic-release/release-notes-generator",
+    "@semantic-release/changelog",
+    "@semantic-release/github",
+    "@semantic-release/npm",
+    "@semantic-release/git"
+],
+
+NOTA: fijate que instalar este paquete en desarrollo no influirá en nada en el paquete que se instalará el usuario de esta librería.Lo que si que se instalará son todas las dependencias normales al instalar esta libreria custom.
+
+En teoría ya está instalado,y fijate que la carpeta dist la debo subir,no puede estar ignorada.Bien,esta libreria trabaja en base a palabras clave que haya en el commit,por ejemplo:
+git commit -m "feat: agregado semantic-versioning" <- esto subirá a 1.1.0
