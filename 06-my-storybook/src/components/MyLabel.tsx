@@ -36,3 +36,4 @@ const MyLabel = ({
 };
 
 export { MyLabel };
+export default MyLabel;

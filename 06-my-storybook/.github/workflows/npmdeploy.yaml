@@ -1,0 +1,36 @@
+# This is a basic workflow to help you get started with Actions
+
+name: Semantic Release CI-CD
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner 
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+     
+      - name: Setup Node.js
+        uses: actions/setup-node@v1
+        with:
+          node-version: 14.17
+      
+      - name: Instalar dependencias
+        run: yarn install
+
+      - name: Builder la App
+        run: yarn build
+
+      - name: Semantic Release
+        env: 
+          GITHUB_TOKEN: ${{ secrets.GH_SECRET }}
+          NPM_TOKEN: ${{ secrets.NPM_SECRET }}
+        run: npx semantic-release

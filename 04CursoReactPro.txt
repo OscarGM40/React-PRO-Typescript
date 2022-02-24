@@ -472,7 +472,7 @@ Esta sección es genial, aprenderemos lo siguiente:
 
 Bien,recuerda que tengo que poner private a false para desplegar un proyecto.
 
-IMPORTANTE: a la hora de desplegar un paquete es buena idea que me tome algo de tiempo y dejar todo correcto.La propiedad typings indicará los archivos de definición de tipos,main el punto de entrada,homepage o repository son metadata muy importante y license,private,versión,...todo es importante.
+IMPORTANTE: a la hora de desplegar un paquete es buena idea que me tome algo de tiempo y dejar todo correcto.La propiedad typings(o types)  indicará los archivos de definición de tipos,main el punto de entrada,homepage o repository son metadata muy importante y license,private,versión,...todo es importante.
 
 Seguiré con la propiedad release que apunta a un arreglo de ramas y files que apunta a un arreglo de directorios o archivos(ambos se admiten).Fijate:
   "release":{
@@ -528,7 +528,7 @@ IMPORTANTE: un paso que se dejó Fernando es definir las peerDependencies,que so
 
   "peerDependencies": {
     "react": ">=16.8.0",
-    "typescript": ">=4.0.0"
+    "typescript": ">=4.0.0" <- al final la quitamos
   },
 
 				VIDEO 174 SEMANTIC VERSIONING AUTOMÁTICO
@@ -537,7 +537,8 @@ El manejo manual del versionamiento semántico es una de las cosas más molestas
 NOTA:viendo el proyecto de Stephen veo que puedo usar "typings" o "types" como propiedad para los d types( "types": "./build/index.d.ts",)También observo que usó una licencia ISC(  "license": "ISC",) en vez de MIT.
 El comando npm version <update_type> aumenta el numero de version(patch | major | minor) en base al type que le pase(npm version patch irá 1.0.1,1.0.2,1.0.3...)
 
-En este punto Fernando sugiere usar la libreria npm 'semantic-release' y además agregarle ciertos plugins para expandir funcionalidades:
+En este punto Fernando sugiere usar la libreria npm 'semantic-release' y además agregarle ciertos plugins para expandir funcionalidades(opción totalmente recomendada,ya que generará releases y deploys a npm automáticamente):
+
 >npm i -D semantic-release o yarn add semantic-release -D
 
 Usar estos plugins para trabajar con Semantic Versioning(ya vienen instalados en el paquete anterior):
@@ -556,3 +557,188 @@ NOTA: fijate que instalar este paquete en desarrollo no influirá en nada en el 
 
 En teoría ya está instalado,y fijate que la carpeta dist la debo subir,no puede estar ignorada.Bien,esta libreria trabaja en base a palabras clave que haya en el commit,por ejemplo:
 git commit -m "feat: agregado semantic-versioning" <- esto subirá a 1.1.0
+
+			VIDEO 175 CONFIGURACION DE TOKENS DE ACCESO
+
+Puedo generar tokens de acceso desde GitHub.Los tengo el settings/developerSettings y alli puedo generar tokens para acceso programático.
+
+Genero uno,lo etiqueto semánticamente y se recomienda darle una fecha de expiración y no usar Sin limite(eligo 90 dias)
+En cuanto al scope de acceso solo necesita acceder al repo.Lo genero y lo guardo 
+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
+
+De igual manera voy a necesitar otro token en npmjs.com.También está en settings.Ojo,este token de npm debo darle acceso a publicar(publish)
+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
+
+Bien,ahora si,recuerda que estos tokens son para autenticar y autorizar la GitHubAction,y obviamente usaremos variables de entorno en el repo.Podemos ir haciendolo ya.
+NOTA: recuerda que un secret en GH va a ir encriptado(igual que en cualquier otro lado,asinto).Los llamamos GH_TOKEN y NPM_TOKEN.
+
+					VIDEO 177 GITHUB ACTIONS
+
+GitHubAction es una tool poderosísima para realizar una gran cantidad de tareas automáticas.Vamos a Actions en el repo y creamos una desde scratch.
+La dejamos como main.yml.Fernando provee un gist al yaml:
+https://github.com/Klerith/sb-components/blob/main/.github/workflows/main.yml
+
+Bien,analicemos el yaml:
+# This is a basic workflow to help you get started with Actions
+
+name: Semantic Release CI-CD
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the master branch
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  # This workflow contains a single job called "build"
+  build:
+    # The type of runner that the job will run on
+    runs-on: ubuntu-latest
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - name: Acceso al repo
+      - uses: actions/checkout@v2
+     
+      - name: Setup Node.js
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 14.17
+          yarn: true 
+      
+      - name: Instalar dependencias
+        run: yarn install
+
+      - name: Builder la App
+        run: yarn build
+
+      - name: Semantic Release
+        env: 
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
+          NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
+        run: npx semantic-release
+
+Puedo ver que se trajo una version de Node con uses: actions/setup-node@v1 + with
+y que para ejecutar npx semantic-release necesitamos los dos tokens de acceso programático.
+
+NOTA:recuerda que los mensajes de commit deben tener una keyword(fix==patch release,feat==minor release,perf == major release).Asi que hacemos un commit con una de ellas:
+git add .
+git commit -m "feat: github actions configurado"
+
+Ahora si,al hacer el push se disparará la acción.
+
+			VIDEO 177 CONTINUACIÓN - ACTUALIZAR VERSIÓN Y PAQUETE
+
+En este punto es muy común tener errores,un simple espacio mal dará un error.Fijate que yo tuve uno con un '-' y otro con el nombre de los secretos.
+
+IMPORTANTE:fijate que con la MFA activada hay que crear un token en npm tipo 'Automation' para que se salte el MFA.
+
+NOTA: puedo ver que esta libreria crea una release además de llevar el versionamiento y auto-despliegue a NPM.Flipando.
+
+Resumen:configurar package.json,tsconfig.json con lo necesario,instalar rimraf,copy-files,configurar scripts,... una vez todo preparado instalar semantic-release en desarrollo y agregar los plugins al package.json.Crear los tokens programáticos y la Github Action.Volver a esta sección si es necesario.
+
+IMPORTANTE: si no agrego las palabras clave se creará un simple push,y aunque se disparé la acción no entrará semantic-release,asi que no se creará la release ni el deploy.Realmente no tengo porque crear una release ni un deploy siempre.
+Fijate que esto es muy conveniente.
+
+					VIDEO 178 ERRORES COMUNES
+
+ERROR UNO: usar CSSModules.
+Un error muy común es que al usar CSSModules(file.module.css) el import que usamos no es el correcto(import Module from '' y tiene que ser sólo import 'file.css')
+
+La solución parece que es usar esto en un file llamado 'declarations.d.ts':
+declare module '*.css' {  } <- y ya está??
+
+ERROR DOS: no exportar los componentes por defecto.
+Simplemente asegurarme que exporto todos los componentes por defecto también.
+Esto aumenta la compatibilidad ya que lo pueden importar los consumidores o bien desestructurando o renombrandolo si así lo desean.
+
+Para probar esto en cualquier proyecto puedo instalar este modulo npm y despues traerme el botón y la label:
+
+npm i oscargm40-my-storybook-components
+
+import { MyLabel,Button}  from 'oscargm40-my-storybook-components';
+<My Label label="Hola mundo" size="h1">
+<Button label="click me" primary />
+
+				SECCION 14 PASAR CALENDAR-APP A PWA
+
+Nuestro objetivo es tener una aplicación de React completa,pero implementando toda la tecnología de PWA a una aplicación de React,mediante ciertas estrategias.
+
+Funcionará sin conexión,hará background-sync...En esta sección sólo la traeremos.
+
+En esta sección tendremos unas instalaciones de una aplicación y backend hechos en mi curso de React de cero a experto, no hace falta que tomen ese curso, pero es una aplicación real de React, con patrón Redux y autenticación por JWT hacia nuestro backend.
+
+El objetivo de la sección es:
+1- Tener una aplicación real de React
+2- Tener un backend y base de datos
+3- Tener una introducción a las PWAs
+
+			VIDEOS 183-184 PREPARACION SECCION Y CAMBIOS EN CALENDAR-APP
+
+Descomprimo sus dos repos y reinstalo dependencias.Ajusto las environment.Fijate que ha introducido pequeños cambios.
+Nosotros,con una PWA podemos mantener toda la funcionalidad de una app,a pesar de no tener conexión a internet o tener una conexión a internet limitada.
+En esta aplicación podremos realizar peticiones POST,PUT,DELETE y que se terminen de realizar en cuanto tenga conexión.
+
+			VIDEO 185 INTRO A LAS PWA Y SERVICE WORKERS
+
+Una PWA viene del término Proggresive Web Application.No tiene nada que ver con el término 'responsive',puede no ser responsive y sí ser PWA.
+Lo que transforma en una PWA a una aplicación es un archivo llamado Service Worker,el cual implementará ciertas configuraciones dependiendo de lo que queramos implementar,es decir que es el archivo de configuración.
+
+Una PWA usualmente está destinada a mejorar la experiencia de usuario.Nos puede ofrecer las siguientes características,dependiendo de lo que configure:
+
+1- Acceso a la aplicación sin conexión
+2- Creación de una base de datos local
+3- Push Notifications
+4- Uso de recursos nativos como la cámara y GPS
+5- Sincronización en segundo plano
+
+** La base de datos local funciona como un fallback.Mientras no haya conexión será la opción elegida,para una vez haya conexión realizar cualquier operación almacenada.Usualmentes es una DB temporal por motivos de seguridad
+
+Fijate que el uso de la camara y una DB permite tomar fotografias,por ejemplo,y no perderlas.
+La sincronización en segundo plano es una feature increíble que permitirá sincronizar la DB principal remota con la local en segundo plano en cuanto se recupere la conexión.
+También se puede usar mensajería,entre otras cosas más.Es un tema muy grande,que aqui solo veremos una pincelada(Fernando tiene un curso de PWAs)
+
+¿Pero cómo funciona una PWA?Cuando un usuario realiza la primera petición el sservidor envia la primera respuesta,con la aplicación a pintar por el browser.Es en esta primera respuesta donde viene algo llamado Service Worker.
+
+El Service Worker va a transformar la forma en que trabajará esa aplicación.Desde ese momento,el Service Worker se pondrá en medio de navegador/servidor,es como un middleware en ambas direcciones.
+La aplicación puede pedir algo,interactuar con el Service Worker y no necesitar del backend.
+IMPORTANTE: el Service Worker funciona como un proxy en segundo plano.No corre al mismo nivel(segundo error,siempre está en segundo plano).
+
+UN Service Worker pueder realizar estas tareas:
+1- Interceptar peticiones
+2- Estar pendiente de notificaciones push
+3- Corre en segundo plano
+4- Manejar el caché de manera manual,permitiendo que no sea el navegador el que administre el caché,y que sea él el que devuelva algo ya cacheado(entre 20-100MB).
+La capacidad depende de la implementación que hizo el navegador,dependiendo de cual se esté usando.
+Fijate que de nuevo la palabar clave es 'puede'.Es altamente configurable.
+
+IMPORTANTE: La aplicación debe ser servida en protocolo HTTPS.No se puede instalar el Service Worker sin un protocolo https.Pero,ojo,si funciona en desarrollo local usando localhost:<port>.Por último la PWA no puede arrancar con yarn start,para poder probar la PWA hay que usar la aplicación de producción.
+
+Por último PWA no está atado ni a responsiveness ni a SPAs.Funciona con cualquier aplicación Web,y especialmente bien con aplicaciones en base a tokens.
+
+					SECCION 15 REACT + PWA
+
+NOTA:normalmente el Service Worker es algo que se añade despues.Se ven tres problemas principales:
+1- comprobar el token:¿como comprobarlo si no tengo conexión al backend?
+2- mandar peticiones al backend <- como mandarlas si no tengo conexión?
+3- decidir cuando usar el caché local y el remoto.
+
+Esta sección es una introducción técnica a las PWA con aplicaciones de React, recuerden que la PWA no es una tecnología que sólo se aplique a React, pero aquí veremos como integrarlo de varias maneras.
+
+Si pueden, creen un commit / branch en Git para que después puedan regresar rápidamente al proyecto tal cual lo tenemos ahora, ya que después haremos lo mismo y mucho más pero con Workbox.
+
+Esta sección es importante porque explicamos los fundamentos y formas te trabajar con la PWA usando la configuración por defecto que nos ofrece npx create-react-app.Puntualmente veremos:
+
+1- Service Worker
+2- Caché
+3- Instalación
+4- Fetch
+5- Estrategias del caché
+  a. Network first
+  b. Cache Only
+  c. Network first with cache fallback
+
+VIDEO
+
