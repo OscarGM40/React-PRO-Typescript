@@ -564,10 +564,8 @@ Puedo generar tokens de acceso desde GitHub.Los tengo el settings/developerSetti
 
 Genero uno,lo etiqueto semánticamente y se recomienda darle una fecha de expiración y no usar Sin limite(eligo 90 dias)
 En cuanto al scope de acceso solo necesita acceder al repo.Lo genero y lo guardo 
-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
 
 De igual manera voy a necesitar otro token en npmjs.com.También está en settings.Ojo,este token de npm debo darle acceso a publicar(publish)
-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
 
 Bien,ahora si,recuerda que estos tokens son para autenticar y autorizar la GitHubAction,y obviamente usaremos variables de entorno en el repo.Podemos ir haciendolo ya.
 NOTA: recuerda que un secret en GH va a ir encriptado(igual que en cualquier otro lado,asinto).Los llamamos GH_TOKEN y NPM_TOKEN.
