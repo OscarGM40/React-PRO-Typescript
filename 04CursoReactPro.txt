@@ -738,5 +738,115 @@ Esta sección es importante porque explicamos los fundamentos y formas te trabaj
   b. Cache Only
   c. Network first with cache fallback
 
-VIDEO
+				VIDEO 188 LEVANTAR AMBOS PROCESOS BACK Y FRONT
+
+NOTA: recuerda que una PWA no está atada al backend.
+
+IMPORTANTE: cuando se hace el build de una SPA se generan chunk.js con un hash random al principio.Se le cambia el nombre ya que si no el servidor no sabría que hay un cambio y serviría el archivo anterior,que lo tendrá en caché,no sirviendo el cambio nuevo.
+Puedo traducir cachear por almacenar información en el disco duro del cliente.
+
+Dado que el Service Worker no funciona con WDS(Webpack develop Server) no puedo usar yarn start sin más.Fijate que PWA se implementará pues con una aplicación terminada.
+Asi que va a haber que instalar 'serve' en global(quizas con live-server también vale).Una vez instalado ejecuto serve -s build:
+>serve -s build
+
+		VIDEO 189 SERVICE WORKER PARA UNA APLICACION EXISTENTE
+
+Hay tres formas para pasar una app a PWA.De estas tres,sólo una está ligada a React,las otras dos son agnosticas al framework.Veremos las tres.
+Documentación oficial: https://create-react-app.dev/docs/making-a-progressive-web-app/
+
+Como nuestra aplicación ya está creada(que es el 99% de los casos) no habré usado el comando inicial (--template cra-template-pwa).Lo más fácil es crear una app temporal con ese comando y pasar a la app original todo.
+>npx create-react-app my-app --template cra-template-pwa
+NOTA:Workbox la compró Google y es una forma muy fácil de trabajar con PWAs.Lo veremos en la siguiente sección,pero veré que está por todos lados.
+
+PASO UNO:copio el serviceWorker.js y el serviceWorkerRegistry.js a mi proyecto.
+PASO DOS: necesito todas las dependencias(todas las que ponga workbox,son unas diez)OJO,son dependencias normales.
+Lo mejor es pegar todo al package.json y ejecutar npm i o yarn.
+
+PASO TRES: arreglar imports(en el index.js)
+import * as serviceWorkerRegistration from "./serviceWorkerRegistration"; 
+serviceWorkerRegistration.unregister(); <- ojo que es unregister.
+
+PASO CUATRO: cambiar el unregister por register ya que es lo que queremos.
+** Si todo esta correcto ahora puedo ejecutar el 'build' de nuevo y debería ver como compilan los archivos anteriores a /build/static/js/service-worker.js.**
+Es un archivo minimizado con todo lo necesario.
+Puedo ejecutar npm run build cuantas veces quiera.
+
+Sirvo la aplicación y puedo ir en las DevTools a application/ServiceWorker.Veré que esta activado(boton en verde)
+
+		VIDEO 190 ¿QUÉ ESTA SUCEDIENDO CON ESTA IMPLEMENTACIÓN POR DEFECTO?
+
+Realmente apenas copié dos archivos y reinicie la aplicación,pero¿que ha cambiado?Varias cosas:
+
+1- Puedo ir a Application/Cache y veré una cache llamada 'workbox-precache-v2' y otra 'images-http...'.Esto es bueno,ya que ahora hay imagenes cacheadas y otros recursos.Puedo ver que me ha cacheado todos los chunks.js y los .css y el index.
+En resumen ,me ha cacheado la aplicación.
+
+IMPORTANTE: Fernando no recomienda usar 'SKIP_WAITING' en una PWA,pues se salta una parte del ciclo de vida del ServiceWorker.
+NOTA:esta caché será un espacio nuevo que se cree en la computadora del anfitrión(puede borrarse fácilmente desde esa pestaña,claro)
+
+Fijate que si estos archivos cacheados no cambian no haría falta pedirlos al servidor,no?.Si no han cambiado me valen.
+
+2- Puedo ir a Application/ServiceWorker y darle en offline.Esto quita la conexión.Si ahora recargo veré varias cosas interesantes:
+1- veré que no cae la aplicación,no sale el dinosario de Google ni un error
+2- incluso veré que está leyendo la CDN para el Boostrap y por ello implementando la fuente Roboto(está accediendo al que tiene cacheado el navegador)
+3- puedo ver esta incluso leyendo la app,y haciendo caso a su lógica(de ahi que veo el checking).Claro que esto ahora es un problema,pues necesito pasar de ese checking.
+
+La parte de una PWA se aleja mucho de lo que es crear una aplicación con React,ya que lo que hace es trabajar con una app ya terminada,realmente.
+
+Bien,podemos ver que nuestro primer problema es que estamos tratando de acceder a un endpoint(http:dominio/api/auth/renew) para revisar el token,pero no podemos acceder porque no tenemos conexión a internet.Este es nuestro primer problema que hay que resolver.
+
+Fernando deja un enlace a Workbox.Workbox es una tecnología que compró Google y permite implementar configuraciones estandar rápidamente para Service Workers.
+
+Más adelante veremos esto,pero ahora mismo necesitamos hacer esta configuración manualmente y entender que hizo Workbox por nosotros.Genial.
+
+					VIDEO 191 DESCARGA E INSTALACIÓN DE SW
+
+Para poder pasar del punto en el que estamos hay que entender el ciclo de vida de un Service Worker
+
+Ciclo de vida inicial:la primera vez no habrá un ServiceWorker en el ordenador del usuario,asi que primero se instala el ServiceWorker y despues se activa.En este ciclo de vida se pueden hacer instalaciones en la cache o disco duro.Una vez se activa hace de proxy entre el front y el back(siempre pasa por el SW,aunque haya conexión).
+
+ Partes de ciclo de vida: install, activate,fetch.Las dos primeras ya las he visto,install instala el SW,activate lo activa.La tercera permite tomar el control cuando sucede una petición REST o a una DB.No confundir con la fetch API,cuando sucede una petición externa en PWA es el ciclo de vida fetch(viene de fetchear datos.
+
+Ejemplo de ciclo de vida install que abre un cache llamado 'static-v1' y cachea un gato:
+
+self.addEventListener('install', event => {
+  console.log('V1 installing…');
+  // cache a cat SVG
+  event.waitUntil(
+    caches.open('static-v1').then(cache => cache.add('/cat.svg'))
+  );
+});
+
+Ejemplo de ciclo de vida 'activate' en el que no se hace nada:
+self.addEventListener('activate', event => {
+  console.log('V1 now ready to handle fetches!');
+});
+
+
+Este ciclo de vida 'fetch' es muy importante.Fijate que puedo saber la url a la que se queria ir con event.request.url:
+
+self.addEventListener('fetch', event => {
+  const url = new URL(event.request.url);
+
+  // al ser url de tipo URL puede acceder a origin o pathname
+  if (url.origin == location.origin && url.pathname == '/dog.svg') {
+    event.respondWith(caches.match('/cat.svg'));
+  }
+});
+
+Alcance y control: El alcance predeterminado de un SW es ./ Si instalo un SW en example.com/foo/ tendré acceso a foo/*,a todo lo de dentro,pero no al primer nivel de example.com(obviamente tenia que haber instalado el SW en la raiz para esto)
+
+Casi siempre se instala en el mismo nivel que esté la app(normalmente en la raiz,pero depende del dominio)Hay que tener cuidado con el alcance del SW.
+
+NOTA: si bien me puedo saltar la fase de espera entre install y activate con el método self.skipWaiting() Fernando recalca que es importante esperar por si acaso el SW está pidiendo algo o haciendo algo importante.
+
+IMPORTANTE: para acceder al SW tengo que usar self.Vayamos al service-worker.js y creemos la lógica nosotros:
+
+self.addEventListener('install', event => {
+  console.log('instalando');
+});
+ 
+    			VIDEO 192 FORMA MANUAL - GRABAR EN CACHÉ
+
+
+
 
