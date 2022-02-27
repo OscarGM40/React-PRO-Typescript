@@ -847,6 +847,115 @@ self.addEventListener('install', event => {
  
     			VIDEO 192 FORMA MANUAL - GRABAR EN CACHÉ
 
+Usualmente,cuando se arranca la app querré meter en la caché varios recursos útiles para la app.
+IMPORTANTE: yo puedo hacer referencia al disco duro del cliente,creando mi caché customizada con lo que desee:
+self.addEventListener('install', async (event) => {
+  const cache = await caches.open('mi-caché-v1'):Promise<Cache>;
+  await cache.addAll([
+    "https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css",
+    "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.0-2/css/all.min.css",
+    "/favicon.ico"
+  ]);'
+
+		VIDEO 193 REALIZAR FETCH OFFLINE DENTRO DEL SERVICE WORKER
+
+Tal vez esta es la parte que más interesa,junto con las estrategias del caché(hay unas 20 o 30,y dependerá del tipo de aplicación y/o del tipo de peticiones).
+
+Si me fijo en el CDN cacheado para Bootstrap veré que yo nunca voy a cambiar esto.Si dentro de 20 años pidiera este archivo Bootstrap 4.5.0 me devolverían lo mismo,asi que, ¿para que pedirlo?.Esta estrategia se llama caché only
+
+NOTA: si voy a la pestaña Network y recargo veré que el ServiceWorker esta sirviendo ciertos archivos y el disc cache(en mi caso no actua el memory cache,que es el cache del navegador).
+
+Bien,siguiendo con lo nuestro,vamos a ver el ciclo de vida 'fetch'.
+self.addEventListener('fetch', (event) => {
+  console.log(event.request.url)
+});
+
+Puedo ver que se han realizado bastantes peticiones:
+http://localhost:3000/manifest.json
+http://localhost:3000/favicon.icon
+* Y al 5000 para el service-worker.js y obviamente a localhost:4000/api/auth/renew: http://localhost:4000/api/auth/renew
+
+También puedo ver que solicitó la CDN de font-awesome
+https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.0-2/css/all.min.css
+
+IMPORTANTE: realmente no es importante ninguna,sólo es importante ver como el SW está interceptando todas y dejandolas pasar,pues no he configurado nada para él.
+Sin embargo ya sé como retornar algo en base a la url de la petición,por ejemplo ya sabriamos hacer algo si se intenta realizar una petición a /api/auth/renew.
+
+Volviendo a las estrategias,podría hacer que el font-awesome y el bootstrap estén con la estrategia 'caché only',y ser servidas siempre desde cache.Obviamente es una buena idea
+Y de nuevo fijate como el endpoint domain/api/auth/renew no podría tener esta estrategia 'caché only' ya que valida el token.Lo ideal sería aplicar la estrategia Network First With Cache Fallback,cuyo nombre explica todo.
+
+Si la solicitud a ese endpoint diera un error entraria la caché como fallback,y yo podría almacenar la respuesta anterior a la caida en cache(es decir que cuando se hace la llamada al endpoint se almacena en la cache por si cae internet)
+NOTA:Aun faltaría saber si el JWT expiró.Y recuerda que si el usuario hace logout elimina el token
+
+			VIDEO 194 NETWORK FIRST WITH CACHE ONLY PART ONE
+
+El network first with cache fallback es muy útil para este tipo de request,como ésta para verificar el token.Hay muchas estrategias,como cache first with network fallback,que hace lo contrario,mirar en caché y sino ir a internet.
+Incluso hay cache first with network fallback with cache update,que primero mirá en caché ,si no esta ahi va a Internet pero además actualiza el caché.
+Desde luego es una estrategia muy usada.
+ 
+Puedo filtrar de forma rudimentaria con un if:
+self.addEventListener("fetch", async (event) => {
+  if (event.request.url !== "http://localhost:4000/api/auth/renew") return;
+
+const resp = fetch(event.request)
+  .then(response => response.clone())
+  .catch(err => console.log("offline response"));
+
+event.respondWith(resp)
+
+NOTA:fijate que lo primero es clonar la response para romper la referencia y no trabajar sobre ella cual asinto.
+
+* IMPORTANTE: fijate que tengo acceso a la fetch API(incluso podría instalar axios),asi que puedo realizar peticiones perfectamente.Sin embargo esta petición obviamente fallará,pues es justo lo que tengo hasta ahora una petición fallida al /renew por no haber conectividad.Esta petición tal como está es lo mismo,va a fallar
+
+			VIDEO 195 NETWORK FIRST WITH CACHE FALLBACK PARTE DOS
+
+Bien,lo que vamos a hacer es guardar en una cache la response a la request:
+const resp = fetch(event.request)
+  .then( (response) => {
+    caches.open("cache-dynamic")
+      .then( cache => cache.put(event.request,response.clone())
+  })
+  return response.clone()
+ .catch( error => {
+    return caches.match(event.request);
+
+IMPORTANTE: caches.match busca en todas las caches,obviamente sé que está en la cache 'cache-dynamic' pero muchas veces no sabŕe explicitamente qúe caché es.
+Fijate que para escribir en la cache se usa cache.put(key,value) ya que es un Map.Y recuerda que abro una cache cuando quiera con caches.open(<name>).Este caches.open():Promise es una promesa asi que puedo acceder a la caché con .then( cache => ...)
+Con todo esto lo que consigo es que la primera vez que haga una peticíon al token el usuario lo almacenaré en la cache y si se cae internet despues,ese fetch(event.request) va a entrar por el catch y devolverá caches.match(event.request) que obviamente es la response que necesito
+
+NOTA: esto lo puedo ver en la pestaña Network y veré que viene del ServiceWorker.Obviamente no consigo hacer fetch de los eventos en el calendario,ya que solo tengo cacheado un posible error para /auth/renew.Desde luego es increible esto.
+Es lo siguiente que vamos a hacer pues,mostrar los eventos sin conexión también.
+
+			VIDEO 196 ALMACENAR EN CACHÉ LOS EVENTOS
+
+Recuerda que para almacenarlos el usuario tendrá que haber realizado una petición exitosa al menos una vez.Es exactamente igual que el anterior:
+self.addEventListener("fetch", (event) => {
+  console.log(event.request.url, "fetch para event");
+  if (event.request.url !== apiOfflineFallbacks[1]) return;
+  
+  const resp = fetch(event.request)
+    .then((response) => {
+      if (!response) {
+        return caches.match(event.request);
+      }
+      caches.open("cache-events").then((cache) => {
+        cache.put(event.request, response.clone());
+      });
+      return response.clone();
+    })
+    .catch((error) => {
+      return caches.match(event.request);
+    });
+  event.respondWith(resp);
+});
+
+En este punto se presentan nuevos inconvenientes.Si no tengo conexión a internet debería ocultar el boton de agregar evento al calendario,y el de borrarlo cuando tengo activo uno.
+Fijate que además ya no son peticiones GET sino POST o DELETE
+NOTA: no sólo eso,sino que el endpoint es dinámico:
+PUT http://localhost:4000/api/events/61675jf... <- incluso es dinámico el endpoint(el error es ERR_INTERNET_DISCONNECTED)
+IMPORTANTE: en el Cache Storage no puedo grabar responses tipo PUT o DELETE.No tiene sentido grabar esos datos.
+
+Usualmente cualquier endpoint diferente de GET recibe un tratamiento diferente.Recuerda que Fernando tiene un curso de PWAs que será bastante bueno.
 
 
 

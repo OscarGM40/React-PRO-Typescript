@@ -1,0 +1,33 @@
+					SECCION 16 USANDO WORKBOX EN LA PWA ANTERIOR
+
+Realmente es muy engorroso usar el método anterior.En esta sección vamos a desahacer todo lo que hicimos en la sección anterior.Fijate que tuve que agregar muchas dependencias en producción,asi que llegaran al bundle final y puedo evitar esto.
+
+WORKBOX permite crear y configurar Service Workers de manera muy rápida.Además,no pertenece a React,asi que lo que aprenda de Workbox lo puedo aplicar en cualquier entorno.
+
+Instalaremos el Workbox-CLI que permite ejecutar comandos,hay uno muy útil(workbox-wizard) que creará un archivo ya configurado con Cache First With Network Fallback.
+
+Veremos como guardar datos en la base de datos IndexDB local.Ojo,es una db asociada a la caché,si el usuario borra la cache eliminará los datos de IndexDB.
+
+Sincronizaremos mediante BackgroundSync las tareas pendientes guardadas en IndexDB para que apenas se tenga conexión se realice esa operación almacenada como si nunca hubiera habido problemas con la conexión.
+Mediante Workbox se puede realizar todo esto,que parece muy complejo,con muy pocas líneas de código.
+Es sumamente cómodo y fácil trabajar con Workbox.
+
+NOTA:fijate que la sección anterior era meramente ilustrativa
+Por último también veré como expandir funcionalidad con módulos de Workbox.
+
+TEMAS DE LA SECCIÓN:
+  Workbox es una herramienta que compro Google y ahora le da soporte, que permite configuraciones poderosas, rápidas y fáciles para el manejo de nuestras PWAs.
+
+Aquí aprenderemos:
+1- Detectar Online y Offline desde React
+2- Workbox
+  a- Wizard
+  b- Estrategias
+  c- Background Sync
+  d- IndexedDB
+  e- Offline CRUD
+3- Optimizaciones de nuestro service worker
+
+				VIDEO 200 CONTINUACION DE NUESTRA APLICACIÓN
+
+

@@ -1,0 +1,108 @@
+				INTRO A RECOIL BY CODELYTV
+
+Source: https://www.youtube.com/watch?v=z0M6mEACXzw
+
+Recoil es una solución de gestión de estado.Surgió de un equipo de Facebook,pero no del equipo Core que hizo React,cuando se enfrentó a un proyecto con mucha reactividad.
+
+El estado seguirá siendo ortogonal,igual que en Redux,pero puedo crear unidades más pequeñas,con lo que se me añade flexibilidad
+
+Se mueve con dos conceptos básicos,átomos y selectores.Toda la ceremonia de slices,actions,thunks etc.. se sustituye por una estructura muy sencilla:
+
+* En el folder /atom/xxx.js declararé mis atoms y selectores.Ambos llevarán una key identificativa única,pero el primero lleva adicional la propiedad default con un estado y el selector lleva una propiedad get: ()=>any:
+
+Un atom
+export const shoppingCartState = atom({
+  key:"shoppingCart",
+  default:{},
+})
+
+Un selector permite invocar a otras funciones,e incluso llamar a otro selector:
+
+export const shoppingCartProductsState = selector({
+  key:"shoppingCartProducts",
+  get: ({get}) => {
+    const shoppingcart = get(shoppingCartState); <- fijate que llama al atom
+    const products = get(productsState);
+
+    return Object.entries( shoppingcart).map( ([key,value] => {
+      const product = {...products[key] };
+      product.quantity = value;
+      return product
+  }))
+  }
+})
+Fijate que no voy a ir a ningun lado sin manejar estructuras de datos al dedillo.
+NOTA: cuanto más pequeño el atomo mejor,ya que puedo componer lo que quiera despues,como puedo ver con los selectores,y devolver mutaciones del mismo,como el acumulado:
+
+export const shoppingCartTotalState = selector({
+  key:"shoppingCartTotal",
+  get: ({get}) => {
+    const products = get(shoppingCartProductsState);
+
+    return products.reduce( (accuml,product) => {
+      const value = product.price * product.quantity;
+      return accuml + value;
+    },0);
+  },
+})
+
+IMPORTANTE: esta libreria Recoil permite suscribirse tanto a átomos como a selectores,de manera que cuando cambien ese átomo o selector se re-renderizará ese componente suscrito(nada nuevo,un cambio re-renderiza al componente involucrado/suscrito).
+
+Por ejemplo un componente que quiere ver los productos,cada vez que cambie el átomo o selector al que está suscrito se volverá a pintar:
+
+const ProductListWrapper = ({addToCart}) => {
+ 
+    const products = useRecoilValue(productsValuesState)
+  
+}
+IMPORTANTE:si bien puedo usar useRecoilState y traerme el setter y getter,esto no es eficaz realmente,y puedo traerme solo el setter o el getter:
+  
+getter <- usar useRecoilValue(atom | selector)
+
+NOTA:este tipo de librerias usan el patrón Container,en el que mediante ese <RecoilRoot> se le proporcionan las props a los componentes desde un Provider.
+
+			ACCIONES ASINCRONAS Y ESTADOS DERIVADOS
+
+Ya hemos dicho que para crear una acción asincrona hay que usar un selector.Fijate que la propiedad get de un selector puede devolver una función asincrona,asi que simplemente es proceder:
+
+IMPORTANTE: un selector nunca inicia contenido,sólo va a interactuar sobre contenido de atomos o de otros selectores,pero al final será un atomo el que lo inicie al subir por esa cadena imaginaria
+
+import { retrieveProducts} from '../repositories/ProductsRepository";
+
+export const productState = selector({
+  key:"products",
+  get: async () => {
+     const products = await retrieveProducts();
+
+   return products.reduct( (result,product) => {
+
+      result[product.id] = product;
+     return result;
+   },{});
+})
+
+NOTA: fijate que el argumento get: (get?) es opcional,dado que vamos a llamar a una función que llamará a una DB,al localStorage o en definitiva nos apoyamos en un repositorio de acceso a datos simplemente será get: async () => {...}
+
+Esta es la forma de realizar acciones asincronas.Ahora bien,otra caracteristica  muy interesante sobre los selectores es llamarse entre ellos y asi poder crear estados derivados,pudiendo por ejemplo acceder solo a los values de un objeto,o a las keys,o a determinados elementos(por ejemplo en base a fechas,etc):
+
+export const productsValuesState = selector({
+  key:"productsValues",
+  get: async ({ get }) => {
+    const products = get(productState);
+    return Object.values(products);
+  }
+})
+
+Aqui este selector llama con get(productState) al selector anterior y se queda con los values,ya que realmente no hay perdida de datos.Esto puedo observar que es muy potente.
+IMPORTANTE: si un selector llama a otro que es asíncrono también tiene que serlo,se deben pasar la keyword 'async'.
+
+Por último,pero no menos importante,toda esta parte de asincronia está totalmente integrada con Concurrent Mode y con Suspense,por ello puedo pasar una fallback sin tampoco tener que hacer nada.Increible:
+
+<RecoilRoot>
+  <Suspense fallback={<div>Loading...</div>} >
+    <App />
+  </Suspense>
+</RecoilRoot>
+
+Increible...,mientras Recoil este haciendo fetching me mostrara el fallback.Investigar sobre captura de errores.
+Esta libreria está recomendada en proyectos con estados pequeños, o donde la granularidad del estado necesite operar quirurjicamente sobre él,por estar muy conectado el estado entre muchos componentes.
