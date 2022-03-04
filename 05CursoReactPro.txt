@@ -30,4 +30,70 @@ Aquí aprenderemos:
 
 				VIDEO 200 CONTINUACION DE NUESTRA APLICACIÓN
 
+Se recomienda crear una rama ya que va a haber cambios drásticos.
+
+					VIDEO 201 WORKBOX CLI WIZZARD
+
+Fernando provee un asset para ir a la página oficial de Workbox:
+https://developers.google.com/web/tools/workbox/guides/generate-service-worker/cli
+
+Pide instalar de manera global la cli para workbox.Puedo ver que lo tengo instalado imprimiendo la version(workbox --version)
+
+El objetivo de usar workbox-cli es tener un sw 	out-of-the-box rápidamente.Para ello voy a la app /frontend( pues es en la app de React donde quiero el SW) y tecleo el comando 'workbox wizard'.Esto creará un archivo de configuración nada más:
+
+El folder del deploy es 'build',pre-cacheado todo,y dejo los nombres por defecto.
+
+Bien,ahora si,ya puedo crear un service worker con esta configuración(veré el comando que necesito por la CLI:
+workbox generateSW workbox-config.js
+
+* Puedo ver que precacheara 664KB,es decir que esto va ser tomado del disco duro del cliente
+Service worker will precache 13 URLs, totaling 664 kB.
+Pudiera parecer que esto es todo,pero de igual forma que antes tuvimos que usar serviceWorker.register() falta decirle a la app que use el ServiceWorker.
+Esta vez vamos a usar una etiqueta <script> en el public/index.html ya que la app de React está embebida alli y tiene visión
+
+IMPORTANTE: siempre que esté usando react-scripts,por haber creado la app con create-react-app tengo acceso a la variable %NODE_ENV% que me indica el ambiente actual de la app.
+Puedo ver que al usar serve -s build es : production
+Ojo,sólo podemos ejecutar la instalación de ServiceWorker si estamos en producción,luego.Bien,entonces agregamos esto al index.html:
+  <script>
+      const isProduction= '%NODE_ENV%' === 'production';
+      console.log('%NODE_ENV%')
+
+      if(isProduction && 'serviceWorker' in navigator){
+        navigator.serviceWorker.register('/sw.js');
+      }else{
+        console.log('no se pudo instalar el service worker')
+      }
+    </script>
+
+Hago el yarn build,ya que he cambiado algo y ojo,esto borrará ese file sw.js que quiero pasarle al navigator.serviceWorker.register asi que tengo que ejecutar workbox generateSW ... tras el build.Esta vez si,tenemos nuestro SW instalado con Workbox,claro que no hace nada pues sólo lo hemos instalado.
+
+				VIDEO 202 WORKBOX SW CONFIGURACION MANUAL
+
+De aqui en adelante es todo cuesta abajo.Creamos un archivo en la raiz llamado 'sw-template.js'(el nombre es opcional.Fijate que debí desactivar el esLint:
+
+/* eslint-disable no-undef */
+importScripts(
+  "https://storage.googleapis.com/workbox-cdn/releases/6.2.0/workbox-sw.js"
+);
+// eslint-disable-next-line no-restricted-globals
+workbox.precaching.precacheAndRoute(self.__WB_MANIFEST);
+
+
+Fijate que en file workbox-config.js también añadi el archivo fuente  desde el que tomar los datos:
+swDest: 'build/sw.js',
+swSrc: 'src/sw-template.js',
+
+Ahora,para que tome este archivo que hemos creado como template hay que usar otro comando:
+>workbox injectManifest
+
+* Puedo ver que funciona perfectamente
+The service worker file was written to build/sw.js
+The service worker will precache 14 URLs, totaling 678 kB.
+
+NOTA: recuerda que Workbox permite crear SW facilmente
+				
+					VIDEO 203 WORKBOX CACHE STRATEGIES
+
+
+
 
