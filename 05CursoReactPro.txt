@@ -94,6 +94,132 @@ NOTA: recuerda que Workbox permite crear SW facilmente
 				
 					VIDEO 203 WORKBOX CACHE STRATEGIES
 
+NOTA: realmente todo lo que he visto lo puedo aplicar aqui también,podria usar perfectamente el código que ya he visto:
+
+>self.addEventListener('install',(event) => {
+ caches.open(...)
+});
+
+Sin embargo no tiene sentido hacerlo,obviamente,ya que workbox agiliza esto.
+Bien,tal como teniamos el código podemos empezar a cachear segun estrategia en base a donde se haga la petición:
+importScripts( "https://storage.googleapis.com/workbox-cdn/releases/6.2.0/workbox-sw.js");
+
+workbox.precaching.precacheAndRoute(self.__WB_MANIFEST);
+
+workbox.routing.registerRoute(
+  new RegExp(
+    "https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
+  ),
+  new workbox.strategies.CacheFirst()
+);
+Fijate como le registro rutas al objeto workbox y especifico una estrategia.
+Ya sólo falta ejecutar yarn PWA(fijate que no necesito hacer el build)
+Puedo observar que el css es servido por el SW y al tener un SW puedo parar el servidor y la aplicación no caerá,pues tiene un SW en medio.
+
+				VIDEO 204 VERIFICACION DE TOKEN OFFLINE
+
+Bien,llegados a este punto puedo ver que CacheFirst y Network First tienen fallback al otro,y que CacheOnly y NetworkOnly no usan la fallback:
+const { CacheFirst,NetworkFirst } = workbox.strategies;
+
+registerRoute(
+  ({url}) => url.pathname.startsWith('/api/auth/renew'),
+  // new RegExp("http://localhost:4000/api/auth/renew"), 
+  new workbox.strategies.NetworkFirst({
+    cacheName: "renew-token",
+  })
+);
+
+/*  */
+registerRoute(
+  ({url}) => url.pathname.startsWith('/api/events'),
+  // new RegExp("http://localhost:4000/api/auth/renew"), 
+  new NetworkFirst({
+    cacheName: "cache-events",
+  })
+); 
+Puedo ver que fue bastante sencillo gracias al trabajo que realiza por mi Workbox.Bien,pero,¿y si quiero hacer peticiones POST o DELETE offline?Workbox también ha pensado en eso y nos cubre con esa DB,además es muy fácil crear las conexiones.
+Todo esto corresponde al módulo Workbox-BackgroundSync.
+
+		VIDEO 205 BACKGROUNDSYNC - REALIZAR PETICIONES POST SIN CONEXION
+
+Importante: todos estos módulos vienen ya preinstalados,sólo hay que activarlos.
+NOTA:hay que ser muy meticuloso a la hora de usar el disco duro del cliente.No es buena idea meter toda una DB completa ni tampoco deberían estar los datos mucho tiempo.También debo recordar que es volátil,y que el usuario podría borrarlo ininitencionalmente
+
+Bien,puedo ver en este ejemplo que la DB se usa como un plugin,y que requiere de la estrategia NetworkOnly,pues los post,delete,etc suelen ser muy dinámicos:
+
+importScripts(...)
+workbox.loadModule('workbox-background-sync);
+
+const { BackgroundSyncPlugin } = workbox.backgroundSync;
+
+const bgSyncPlugin = new BackgroundSyncPlugin('myQueueName',{
+  maxRetentionTime: 24 * 60 // 24h es buena idea
+});
+
+registerRoute(
+  new RegExp(...),
+  new NetworkOnly({
+    plugins:[bgSyncPlugin] }),
+  'POST',<- pueden ser varias o hay que hacer otro controller??
+);
+
+En cuanto haga un Post sin conexion,ojo, se acumulará en la indexedDB el posteo y en cuanto haya conexion se realizara solo.Dado que no estamos usando sockets tengo que recargar el navegador una vez para verlo.Increible.
+
+					VIDEO 206 TAREA - PUT Y DELETE
+
+El PUT y DELETE van a ser algo más complicados por que usan un param dinámico.El truco está en usar la regexp apropiada para esa ocasion:
+registerRoute(
+  new RegExp("http://localhost:4000/api/events*"),
+  new NetworkOnly({
+    plugins: [bgSyncPlugin],
+  }),
+  "PUT"
+);
+
+registerRoute(
+  new RegExp("http://localhost:4000/api/events*"),
+  new NetworkOnly({
+    plugins: [bgSyncPlugin],
+  }),
+  "DELETE"
+);
+NOTA:fijate que cuando use un ServiceWorker también se crea un Manifest(está arriba de Service Workers).El Manifest le dice a la aplicación varias cosas como el background-color o los iconos.
+
+Puedo ir a public/manifest.json y ver qué es lo que está metiendo la app al Manifest,y obviamente añadirle cosas:
+
+{
+  "short_name": "React App",
+  "name": "Create React App Sample",
+  "icons": [
+    {
+      "src": "favicon.ico",
+      "sizes": "64x64 32x32 24x24 16x16",
+      "type": "image/x-icon"
+    },
+    {
+      "src": "logo192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "logo512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#000000",
+  "background_color": "#ffffff"
+}
+Por ejemplo,le puedo cambiar el short_name y el name.Recuerda que es el manifest.json de la carpeta public
+
+IMPORTANTE:cuando un browser detecte el service worker y el manifest veré una opción para instalar la app.Puedo instalarla y veré una app de escritorio(puedo desinstalarla despues)
+
+Quedaría refactorizar un poco el código,ya que hemos repetido bastante,pero puedo observar lo fácil que fue implementar PWA en la aplicación de producción.
+
+			VIDEO 207 OPTIMIZANDO NUESTRO SERVICE-WORKER.JS	
+
 
 
 
