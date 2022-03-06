@@ -315,4 +315,84 @@ Es una sección bien interesante que les puede servir mucho, especialmente si qu
 
 				VIDEO 212-213 INICIO - CREANDO EL CONTEXTO DE LUGARES
 
+Creamos una nueva app en typescript,siguiendo las instrucciones de Fernando.Fijate que usaremos el ContextAPI por comodidad,y que Fernando sugiere usar tres archivos por cada Contexto que use:
+
+* Uno para el createContext(PlacesContext.ts):
+
+import { createContext } from "react";
+
+export interface PlacesContextProps {
+  isLoading: boolean
+  userLocation?: [number, number] 
+}
+
+export const PlacesContext = createContext({} as PlacesContextProps);
+
+* Otro para el Provider:
+import { PlacesContext } from "./PlacesContext";
+
+export interface PlacesState {
+  isLoading: boolean;
+  userLocation?: [number, number];
+
+}
+
+const INITIAL_STATE:PlacesState = {
+  isLoading: true,
+  userLocation: undefined
+};
+
+type  Children = {
+  children: JSX.Element | JSX.Element[]
+}
+export const PlacesProvider = ({ children }:Children) => {
+
+  return (
+    <PlacesContext.Provider value={{ 
+      isLoading: INITIAL_STATE.isLoading,
+      userLocation: INITIAL_STATE.userLocation,
+     }}>
+      {children}
+    </PlacesContext.Provider>
+  );
+};
+
+* Otro para la función pura reductora(fijate que el createContext y éste no devuelven JSX):
+import { PlacesState } from "./PlacesProvider";
+
+type PlacesAction = {
+  type: "setUserLocation",
+  payload: [number, number]
+
+}
+
+export const placesReducer = (state: PlacesState, action: PlacesAction): PlacesState => {
+
+  switch (action.type) {
+    case "setUserLocation":
+      return {
+        ...state,
+        isLoading: false,
+        userLocation: action.payload
+      }
+    default:
+      return state;
+  }
+}
+
+Para usar la función hay que usar el hook useReducer:
+
+export const PlacesProvider = ({ children }: Children) => {
+  const [state, dispatch] = useReducer(placesReducer, INITIAL_STATE);
+
+  return (
+    <PlacesContext.Provider
+      value={{
+        ...state,
+      }}
+    >
+Fijate que con esparcir el state fue suficiente.En este punto debo memorizar estos pasos ya que es un cascarón perfecto para implementar la ContextAPI.
+
+			VIDEO 215 OBTENER LA GEOLOCALIZACIÓN DEL HOST DEL USUARIO
+
 
