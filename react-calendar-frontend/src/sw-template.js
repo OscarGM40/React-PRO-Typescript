@@ -14,38 +14,59 @@ const bgSyncPlugin = new BackgroundSyncPlugin("posteos-offline", {
   maxRetentionTime: 24 * 60, // 24h es buena idea
 });
 
+const cacheNetworkFirst = [`/api/auth/renew`, `/api/events`];
+const cacheCacheFirst = [
+  "https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css",
+  "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.0-2/css/all.min.css",
+];
+
 /* puedo decir al Sw que cuando la ruta coincida con la RegExp se utilice determinada estrategia(Cache Only-Cache First,...)  */
 workbox.routing.registerRoute(
-  new RegExp(
+  /* realmente puedo usar RegExp o un callback.Si el callback regresa true pasa al segundo argumento */
+  ({ request, url }) => {
+    // console.log(request, url);
+
+    if (cacheNetworkFirst.includes(url.pathname)) {
+      return true;
+    } else {
+      return false;
+    }
+  },
+  /* new RegExp(
     "https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css"
-  ),
-  new workbox.strategies.CacheFirst()
+  ), */
+  new NetworkFirst()
 );
 
 registerRoute(
-  new RegExp(
+  ({request, url}) => {
+    if (cacheCacheFirst.includes(url.href)) {
+      return true;
+    } else {
+      return false;
+    }
+  },
+/*   new RegExp(
     "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.0-2/css/all.min.css"
-  ),
+  ), */
   new CacheFirst()
 );
 
 /* ojo que NetworkFirst y CacheFirst tienen fallback implementado,no confundir con CacheOnly y NetworkOnly */
-registerRoute(
+/* registerRoute(
   ({ url }) => url.pathname.startsWith("/api/auth/renew"),
-  // new RegExp("http://localhost:4000/api/auth/renew"),
   new workbox.strategies.NetworkFirst({
     cacheName: "renew-token",
   })
-);
+); */
 
 /* GET EVENTS */
-registerRoute(
+/* registerRoute(
   ({ url }) => url.pathname.startsWith("/api/events"),
-  // new RegExp("http://localhost:4000/api/auth/renew"),
   new NetworkFirst({
     cacheName: "cache-events",
   })
-);
+); */
 
 /* POST EVENTS  */
 registerRoute(

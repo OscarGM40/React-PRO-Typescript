@@ -220,6 +220,99 @@ Quedaría refactorizar un poco el código,ya que hemos repetido bastante,pero pu
 
 			VIDEO 207 OPTIMIZANDO NUESTRO SERVICE-WORKER.JS	
 
+En realidad puedo mandar varias cosas al registerRoute.Puedo mandarle una callback como primer argumento,si regresa true pasará al segundo.En esta callback puedo acceder a los objetos request y url:
 
+workbox.routing.registerRoute(
+  ({request,url}) => {
+    console.log(request,url)
+    return false;
+  },
+  new workbox.strategies.CacheFirst()
+);
+
+Request {method: 'GET', url: 'https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css', headers: Headers, destination: 'style', referrer: 'http://localhost:3000/', …} 
+URL {origin: 'https://stackpath.bootstrapcdn.com', protocol: 'https:', username: '', password: '', host: 'stackpath.bootstrapcdn.com', …}
+Puedo ver que tengo visión sobre cualquier metadata prácticamente.
+
+Sabiendo esto puedo resumir bastante el código:
+
+const cacheNetworkFirst = [`/api/auth/renew`, `/api/events`];
+
+const cacheCacheFirst = [
+  "https://stackpath.bootstrapcdn.com/bootstrap/4.5.0/css/bootstrap.min.css",
+  "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.0-2/css/all.min.css",
+];
+
+workbox.routing.registerRoute(
+  ({ request, url }) => {
+    if cacheNetworkFirst.includes(url.pathname) return true;
+    return false;
+  },
+  new NetworkFirst()
+);
+
+registerRoute(
+  ({request, url}) => {
+    if (cacheCacheFirst.includes(url.href)) {
+      return true;
+    } else {
+      return false;
+    }
+  },
+  new CacheFirst()
+);
+
+Ojo que para las CDNs es url.href(aunque también se puede hacer de otras formas).
+
+				VIDEO 208 MOSTRAR MENSAJES DE ONLINE - OFFLINE
+
+Para realizar esto vamos a usar el paquete 'react-detect-offline':
+>npm i react-detect-offline
+
+Hay dos estrategias para implementar esta libreria:
+
+UNA:
+import { Offline, Online } from "react-detect-offline";
+
+const App = () => (
+  <div>
+    <Online>Only shown when you're online</Online>
+    <Offline>Only shown offline (surprise!)</Offline>
+  </div>
+);
+
+DOS:
+<Detector
+  render={({ online }) => (
+    <div className={online ? "normal" : "warning"}>
+      You are currently {online ? "online" : "offline"}
+    </div>
+  )}
+/>
+
+Al final pongo algo asi en la navbar:
+   <Online>
+        <span className="text-success">Online</span>
+      </Online>
+      <Offline>
+        <span className="text-danger">Offline</span>
+      </Offline>
+
+Fijate como aunque fuera una sección introductoria me ha servido mucho para entender una PWA y workbox.
+
+		SECCION 17 MAPAS-MARCADORES-POLYLINES  WITH MAPBOX
+
+Esta es una sección bonus añadida después de haber terminado el curso, la cual tiene por objetivo aprender:
+
+1- Uso de Mapbox con TypeScript
+2- Rutas y direcciones
+3- Marcadores
+4- Comunicación entre contextos
+5- Distancia entre dos puntos
+6- Duración aproximada del viaje
+
+Es una sección bien interesante que les puede servir mucho, especialmente si quieren realizar cualquier trabajo con mapas en sus aplicaciones móviles o web.
+
+				VIDEO 212-213 INICIO - CREANDO EL CONTEXTO DE LUGARES
 
 
