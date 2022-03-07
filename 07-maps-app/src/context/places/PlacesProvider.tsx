@@ -1,4 +1,5 @@
-import { useReducer } from "react";
+import { useEffect, useReducer } from "react";
+import { getUserLocation } from "../../helpers";
 import { PlacesContext } from "./PlacesContext";
 import { placesReducer } from "./placesReducer";
 
@@ -19,11 +20,23 @@ type Children = {
 export const PlacesProvider = ({ children }: Children) => {
   const [state, dispatch] = useReducer(placesReducer, INITIAL_STATE);
 
+  useEffect(() => {
+/*     ( async () => {
+      const lngLat = await getUserLocation();
+      dispatch({
+        type: "setUserLocation",
+        payload: lngLat,
+    })})(); */
+
+    getUserLocation().then((lngLat) =>
+      dispatch({ type: "setUserLocation", payload: lngLat })
+    ); 
+  }, []);
+
   return (
     <PlacesContext.Provider
       value={{
         ...state,
-        
       }}
     >
       {children}

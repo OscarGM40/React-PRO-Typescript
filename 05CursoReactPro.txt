@@ -313,7 +313,7 @@ Esta es una sección bonus añadida después de haber terminado el curso, la cua
 
 Es una sección bien interesante que les puede servir mucho, especialmente si quieren realizar cualquier trabajo con mapas en sus aplicaciones móviles o web.
 
-				VIDEO 212-213 INICIO - CREANDO EL CONTEXTO DE LUGARES
+			VIDEO 212-213 INICIO - CREANDO EL CONTEXTO DE LUGARES
 
 Creamos una nueva app en typescript,siguiendo las instrucciones de Fernando.Fijate que usaremos el ContextAPI por comodidad,y que Fernando sugiere usar tres archivos por cada Contexto que use:
 
@@ -392,7 +392,58 @@ export const PlacesProvider = ({ children }: Children) => {
       }}
     >
 Fijate que con esparcir el state fue suficiente.En este punto debo memorizar estos pasos ya que es un cascarón perfecto para implementar la ContextAPI.
+Fijate también que queda algun paso adicional para el dispatch,cuando lo resuelva actualizar el gist.
 
 			VIDEO 215 OBTENER LA GEOLOCALIZACIÓN DEL HOST DEL USUARIO
+
+
+Lo primero es ir a las ChromeDevTools,clickar en los tres puntos,despues en More Tools y despues en sensors ,alli puedo meter una lngLat custom(anécdotico).
+
+Para obtener la geolocalización usaremos la navigator API ya integrada en del browser :
+
+export const getUserLocation = async (): Promise<[number, number]> => {
+  return new Promise((resolve, reject) => {
+    /* también tengo watch para geolocalizar en movimiento */
+    navigator.geolocation.getCurrentPosition(
+      ({ coords }) => {
+        resolve([coords.latitude, coords.longitude]);
+      },
+      (err) => {
+        alert('no se pudo obtener la geolocalización')
+        reject("Error: " + err);
+      })
+  })
+}
+Primeramente creo una Promise que resuelva a lo que yo quiero y despues la llamo en un efecto,para que sea la primera accion que se dispare:
+
+export const PlacesProvider = ({ children }: Children) => {
+  const [state, dispatch] = useReducer(placesReducer, INITIAL_STATE);
+
+  useEffect(() => {
+    ( async () => {
+      const lngLat = await getUserLocation();
+      dispatch({
+        type: "setUserLocation",
+        payload: lngLat,
+    })})();
+},[]);
+
+			VIDEO 216 MOSTRAR LA GEOLOCALIZACIÓN DEL USUARIO EN PANTALLA
+
+Una vez obtenida con la navigator API,disparada la accion inmediatamente se cargue la app queremos mostrarla por la UI.
+Fijate que es mejor snipet rafc o tsrafc que rafce.
+
+export const MapView = () => {
+  const { isLoading, userLocation } = useContext(PlacesContext);
+
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  return <div>{userLocation?.join("")}</div>;
+};
+Recuerda que puedo ir a Components y en los providers cambiar ese isLoading.Hazlo
+
+					 VIDEO 217 MOSTRAR MAPA DE MAPBOX
 
 
