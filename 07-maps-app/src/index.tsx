@@ -1,16 +1,14 @@
-import React from "react";
 import ReactDOM from "react-dom";
 import { MapsApp } from "./MapsApp";
+import mapboxgl from "mapbox-gl";
 import "./styles.css";
+
+mapboxgl.accessToken =
+  "pk.eyJ1Ijoib3NjYXJnbTQwIiwiYSI6ImNsMGlodzVldDAyeXMzZHA2NGZ1cHg1bTEifQ.T0pHpl7PK3jMnnt9McgRFw";
 
 if (!navigator.geolocation) {
   alert("Geolocation is not supported by your browser");
   throw new Error("Geolocation is not supported by your browser");
 }
 
-ReactDOM.render(
-  <React.StrictMode>
-    <MapsApp />
-  </React.StrictMode>,
-  document.getElementById("root")
-);
+ReactDOM.render(<MapsApp />, document.getElementById("root"));

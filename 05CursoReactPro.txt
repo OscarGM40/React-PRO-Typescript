@@ -446,4 +446,198 @@ Recuerda que puedo ir a Components y en los providers cambiar ese isLoading.Hazl
 
 					 VIDEO 217 MOSTRAR MAPA DE MAPBOX
 
+Vamos a usar mapbox por motivos obvios.Fijate que la generación de tokens que tienen es muy buena,pudiendo incluso restringir las URLS desde las que se envia el token,para que no lo usen más que en mi web.
+Para ver como se instala voy a documentación.Alli ya me dicen que puedo usar una CDN o la libreria mapbox-gl de npm
 
+Genero un token y me traigo las cdns o uso npm.Recuerda que hay que esperar al DOM para cerciorarme que el div donde voy a meter el mapa existe:
+
+ const mapDiv = useRef<HTMLDivElement>(null);
+
+  useLayoutEffect(() => {
+    if (!isLoading) {
+      new Map({
+        container: mapDiv?.current!,
+        style: 'mapbox://styles/mapbox/streets-v11',
+        center: userLocation,
+        zoom: 4,
+      });
+    }
+  }, [isLoading,userLocation]);
+  
+  if (isLoading) {
+    return <Loading />;
+  }
+
+  return (
+    <div
+      ref={mapDiv}
+      style={{
+        height: "100vh",
+        width: "100vw",
+        position: "fixed",
+        top: 0,
+        left: 0,
+      }}
+    >
+    </div>
+  ; 
+
+				VIDEO 218 CREAR EL CONTEXTO PARA EL MAPA
+
+Lo más importante es que mapbox ya me da el tipo Map para tipar una propiedad.Sabiendo esto,nuestro contexto podria lucir en un primer momento como esto:
+
+import { Map } from "mapbox-gl";
+import { createContext } from "react";
+
+interface MapContextProps {
+  isMapReady: boolean;
+  map?: Map;
+}
+
+export const MapContext = createContext({} as MapContextProps);
+
+En cuanto al Provider fijate como luce.De nuevo la clave es que map sea undefined en un principio y opcional y recuerda que los children son un JSX.Element o un JSX.Element[]:
+
+export interface MapState {
+  isMapReady: boolean;
+  map?:Map;
+}
+
+const INITIAL_STATE: MapState = {
+  isMapReady: false,
+  map: undefined,
+};
+
+type Children = {
+  children: JSX.Element | JSX.Element[];
+};
+
+export const MapProvider = ({ children }: Children) => {
+  const [state, dispatch] = useReducer(mapReducer, INITIAL_STATE);
+
+  return (
+    <MapContext.Provider
+      value={{
+        ...state,
+      }}
+    >
+      {children}
+    </MapContext.Provider>
+  )
+};
+
+Y en cuanto al reducer de nuevo no nos complicamos:
+
+type MapAction = {
+  type: "setMap",
+  payload: Map
+
+}
+
+export const mapReducer = (state: MapState, action: MapAction): MapState => {
+
+  switch (action.type) {
+    case "setMap":
+      return {
+        ...state,
+        map: action.payload
+      }
+    default:
+      return state;
+  }
+}
+Genial.Recuerda usar el index para exportaciones masivas.Y fijate como puedo exportar un import por default:
+export {default as Comp1} from './Comp1.jsx';
+export {default as Comp2} from './Comp2.jsx';
+Amazing,ya puedo volver a mi tsrafce cual prehistoric
+
+Por último,si no quiero tener que tipar el Children puedo usar React.FC(de functional component) asin:
+
+const CustomComponent: React.FC = ({ children }) => {
+  return (
+    <div>{children}</div>
+  )
+}
+
+			VIDEO 219 ESTABLECER EL MAPA EN EL CONTEXTO
+
+Es importante entender que realmente puedo abastecer a mi contexto con lo que quiera,puedo crear cualquier función y proveeerla a la APP.Por ejemplo,puedo crear una función que llame al dispatch de una acción y abastecer esa función:
+
+export const MapProvider = ({ children }: Children) => {
+  const [state, dispatch] = useReducer(mapReducer,INITIAL_STATE);
+
+  const setMap = (map:Map) => {
+    dispatch({
+      type: "setMap",
+      payload: map,
+    });
+  }
+  
+  return (
+    <MapContext.Provider
+      value={{
+       ...state,
+        setMap,
+      }}
+    >
+
+Fijate que yo normalmente envio el dispatch y ya dispararé la acción.Ahora donde quiera puedo llamar al setMap que disparará esa acción.La verdad es que son formas distintas de hacerlo,puede ser útil esta aproximación.
+
+			VIDEO 220 MARCADORES,POPUPS Y BOTON DE UBICACION
+
+Bien,ahora si,ya queda esclarecido porqué ha creado una función custom y la abastece,ya que no sólo va a establecer el mapa sino que sacaré un marcador:
+
+ const setMap = (map:Map) => { 
+
+    const myLocationPopup = new Popup()
+    .setHTML(`
+      <h4>Aquí estoy</h4>
+      <p>En algún lugar del mundo</p>`);
+    
+    const newMarker = new Marker({
+      color:"#61dafb",
+      draggable: true,
+    })
+    .setLngLat(map.getCenter())
+    .setPopup(myLocationPopup)
+    .addTo(map);
+    
+    dispatch({
+      type: "setMap",
+      payload: map,
+    });
+  }
+Fijate como esta vez Fernando ha mejorado en esta aplicación de mapas
+NOTA: realmente hay bastantes temas en la libreria,vamos a usar uno más bonito que el normal,fijate que incluso puedo crear mis propios temas.
+
+Bien,y por último,dado que tengo acceso al map y a la ubicación del usuario puedo crear un botón que devuelva al usuario a la posición actual.La clave es map.flyTo() y mandarle la userLocation.
+
+const onClick = () => {
+    if(!isMapReady) throw new Error("Map is not ready, please wait");
+    if(!userLocation) throw new Error("No hay ubicación de usuario")
+    
+    if (isMapReady) {
+      map?.flyTo({
+        center: userLocation,
+        zoom: 12,
+      });
+    }
+  }
+
+IMPORTANTE: puedo crear cualquier cosa realmente,sólo hay que tener la imaginación para ello,en este caso fijate como Fernando crea un componente que es el icono de React y lo pone en fixed abajo a la derecha,quedando espectacular.
+
+const ReactLogo = () => {
+  return <img src={reactLogo} alt="react-logo" style={{
+    position: "fixed",
+    bottom:"20px",
+    right:"20px",
+    width:"130px",
+    zIndex:9,
+  }}/>;
+};
+export default ReactLogo;
+No debo minusvalorar a position:fixed.
+
+				VIDEO 222 SEARCH BAR Y DEBOUNCE MANUAL
+
+Vamos a crear una caja de búsqueda que nos permita introducir ciudades,etc...
