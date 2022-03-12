@@ -3,8 +3,8 @@ import { MapsApp } from "./MapsApp";
 import mapboxgl from "mapbox-gl";
 import "./styles.css";
 
-mapboxgl.accessToken =
-  "pk.eyJ1Ijoib3NjYXJnbTQwIiwiYSI6ImNsMGlodzVldDAyeXMzZHA2NGZ1cHg1bTEifQ.T0pHpl7PK3jMnnt9McgRFw";
+
+  mapboxgl.accessToken = "pk.eyJ1Ijoib3NjYXJnbTQwIiwiYSI6ImNsMGlodzVldDAyeXMzZHA2NGZ1cHg1bTEifQ.T0pHpl7PK3jMnnt9McgRFw";
 
 if (!navigator.geolocation) {
   alert("Geolocation is not supported by your browser");
