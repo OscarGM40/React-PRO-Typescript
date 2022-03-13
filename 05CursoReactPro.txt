@@ -641,3 +641,138 @@ No debo minusvalorar a position:fixed.
 				VIDEO 222 SEARCH BAR Y DEBOUNCE MANUAL
 
 Vamos a crear una caja de búsqueda que nos permita introducir ciudades,etc...
+NOTA:recuerda que cuando dos márgenes se encuentran se produce el colapso de márgenes(margin-bottom:50px y margin-top:40px producirán un márgen de 50).Siempre prevalecedará el margin con mayor valor.
+IMPORTANTE:el colapso de margenes también lo hereda el padre.Si tengo un <div><h2> y le doy un margin-top de 40px al h2 el div se apropiará de él y tendrá ese margin top(los hijos pasan el margin al padre).Esto sólo sucede si se tocan los márgenes,pudiendo usar un padding de 0.1px en el padre para separarlo del hijo
+
+En cuanto a box-sizing puedo usar content-box o border-box.Normalmente se usa la segunda,y lo que hace es sumar los margins,paddings y borders al contenido de la caja.Si yo le doy 300 de alto,10 de margin y 10 de pading me quedarán 260px para el contenido,y si le doy un border de 1px quedarán 258.
+
+Bien,volviendo al video fijate de nuevo que fácil es crear el input de busqueda con la position fixed pegandolo a cualquier esquina.Además,vamos a implementar un debounceTime manualmente,para no usar una dependencia:
+
+export const SearchBar = () => {
+  const debounceRef = useRef<NodeJS.Timeout>(); <- fijate que debounceRef es un simple setTimeout\interval
+
+  const handleChange = (event:ChangeEvent<HTMLInputElement>) => {
+   if(debounceRef.current){
+     clearTimeout(debounceRef.current);
+   } <- si se pulsa una tecla durante esos 350ms vuelvo a resetear el interval
+	
+  debounceRef.current = setTimeout( () => {
+  console.log(event.target.value)
+},350)
+
+NOTA:fijate que sencillo ha sido implementar el debounceTime manualmente,no puede ser más sencillo y ten en cuenta que es algo muy útil.Puedo observar que es una tontería implementar paquetes de terceros que pudieran romper la aplicación en un futuro para algo tan nimio.
+
+		VIDEO 223 BUSCAR LUGARES BASADOS EN EL RESULTADO DE LA BUSQUEDA
+
+Para realizar busquedas por coordenadas,nombres de ciudad,etc puedo ver en la documentación que debo apuntar por GET a:
+https://api.mapbox.com/geocoding/v5/mapbox.places/central.json?proximity=ip&types=place%2Cpostcode%2Caddress&language=es&access_token=YOUR_MAPBOX_ACCESS_TOKEN
+
+Llegados a este punto vamos a crearnos una nueva instancia de axios para realizar comodamente las peticiones.
+
+
+const searchApi = axios.create({
+  baseURL: 'https://api.mapbox.com/geocoding/v5/mapbox.places',
+  params:{
+    limit:5,
+    language:'es',
+    access_token: "pk.ey..."
+  }
+})
+
+export default searchApi;
+NOTA:en cuanto tenga varios queryParams lo mejor es crear instancias de axios.De echo siempre es buena idea crear una mandando el token para no repetirme.
+Vamos a abastecer la función en el PlacesContext:
+
+ const searchPlacesByTerm = async (query:string) => {
+    if(query.length === 0) return []; // limpiar state
+  
+    if(!state.userLocation) throw new Error("no hay ubicación del usuario")
+
+    const resp = await searchApi.get(`/${query}.json`, {
+      params: {
+       /*  proximity:state.userLocation[0] + "," + state.userLocation[1], */
+       lat: state.userLocation[0],
+       lng: state.userLocation[1],
+
+    }});
+    console.log(resp.data,'resp')
+    return resp.data;
+  }
+Ya sólo es llamarla en el handleChange.
+
+			VIDEO 224 COLOCAR EL TIPO DE DATO Y ALMACENARLO EN EL STATE
+
+Tenemos un problema con el tipado(ya que hemos tipado como (query:String)=>Promise<any>.Como siempre,copio la respuesta y saco el tipado.
+
+NOTA: si bien puedo usar la web quicktype.io también hay una extensión de VSCode para ello.La extensión se llama Paste JSON as Code y es de quicktype.Simplemente tengo que pegar un JSON y con CTRL+SHIFT+p elegir Paste JSON as Code y darle un nombre a la interfaz principal cuando me lo pida.
+
+Con todo esto ya puedo tipar la petición y devolver el arreglo de features únicamente:
+ const resp = await searchApi.get<PlacesResponse>(`/${query}.json`, {
+      params: {
+       lat: state.userLocation[0],
+       lng: state.userLocation[1],
+
+    }});
+    return resp.data.features;
+
+En cuanto a las acciones vamos a crearnos más:
+type PlacesAction =
+  | { type: "setUserLocation", payload: [number, number] }
+  | { type: "setLoadingPlaces" }
+  | { type: "setPlaces", payload: Feature[] }
+
+Fijate que esa sintaxis parece la más adecuada actualmente.Ahora si,ya puedo disparar estas acciones(fijate en la conveniencia de tener el dispatch a mano al crear mis acciones en el Provider):
+
+  const searchPlacesByTerm = async (query: string) => {
+    if (query.length === 0) return []; // limpiar state
+    if (!state.userLocation) throw new Error("no hay ubicación del usuario");
+    dispatch({type:'setLoadingPlaces'});
+
+    const resp = await searchApi.get<PlacesResponse>(`/${query}.json`, {
+      params: {
+        lat: state.userLocation[0],
+        lng: state.userLocation[1],
+      },
+    });
+    dispatch({ type: "setPlaces", payload: resp.data.features });
+    return resp.data.features;
+  };
+	
+			VIDEO 225 MOSTRAR ESOS LUGARES ENCONTRADOS
+
+Con los lugares ya cargados en nuestro state ya simplemente es pintar un marcador para cada uno.Crearemos un componente especializado en mostrar todos estos lugares.
+
+Asin:recuerda preguntar por el inglés y ser modesto y amable con tod@s.
+export const SearchResults = () => {
+  const { places, isLoadingPlaces } = useContext(PlacesContext);
+
+  if(isLoadingPlaces) {
+    return <LoadingPlaces />
+  }
+  if(places.length === 0) {
+    return <></>
+  }
+  return (
+    <ul className="list-group mt-3">
+      {places.map((place) => (
+        <li 
+          key={place.id} 
+          className="list-group-item list-group-item-action">
+          <h6>{place.text_es}</h6>
+          <p className="text-muted" 
+          style={{ fontSize: 12 }}
+          >
+            {place.place_name}
+          </p>
+          <button className="btn btn-outline-primary">Direcciones</button>
+        </li>
+      ))}
+    </ul>
+  );
+};
+
+Aún falta mostrar en el mapa los resultados,pero ya puedo verlos en la lista.
+
+			VIDEO 226 COLOCAR MARCADORES POR CADA SITIO ENCONTRADO
+
+

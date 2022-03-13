@@ -33,7 +33,10 @@ export const PlacesProvider = ({ children }: Children) => {
   }, []);
 
   const searchPlacesByTerm = async (query: string) => {
-    if (query.length === 0) return []; // limpiar state
+    if (query.length === 0) {
+      dispatch({type:'setPlaces', payload:[]});
+      return [];
+    }
     if (!state.userLocation) throw new Error("no hay ubicación del usuario");
     dispatch({type:'setLoadingPlaces'});
 

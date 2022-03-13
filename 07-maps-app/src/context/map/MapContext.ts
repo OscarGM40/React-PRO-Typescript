@@ -1,5 +1,6 @@
 import { Map } from "mapbox-gl";
 import { createContext } from "react";
+import { DirectionsResponse } from "../../interfaces/directions";
 
 
 interface MapContextProps {
@@ -8,6 +9,7 @@ interface MapContextProps {
 
   /* methods */
   setMap: (map: Map) => void;
+  getRouteBetweenPoints:(start:[number, number], end:[number, number]) => Promise<DirectionsResponse>
 }
 
 export const MapContext = createContext({} as MapContextProps);
