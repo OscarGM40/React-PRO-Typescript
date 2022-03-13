@@ -775,4 +775,110 @@ Aún falta mostrar en el mapa los resultados,pero ya puedo verlos en la lista.
 
 			VIDEO 226 COLOCAR MARCADORES POR CADA SITIO ENCONTRADO
 
+NOTA:hay ciertas propiedades CSS que se heredan automáticamente.Si tengo un div y dentro un h2 propiedades como el color o font-family las heredará el h2 si se las declaro al div padre.
+Si quiero puedo volver al valor inicial con el value 'initial':
+div {
+  text-align:center
+}
+div > h2 {
+  text-align:initial; <- ahora en vez de center(que lo iba a tener por herencia) se pondrá en left,que es como estaba antes de heredar el center
+Y de igual manera puedo heredar borders,paddings,...
+div{ 
+border: 1px solid black
+}
+div > h2 {
+  border: inherit<- al heredar el borde coge el del padre que es el div
+
+Siempre hay que tener en cuenta la herencia e ir al inspector en caso de problemas
+Bien,volviendo al video,nos faltó resetear cuando el input esté vacío:
+ 
+   if (query.length === 0) {
+      dispatch({type:'setPlaces', payload:[]});
+      return [];
+    }
+Mandar un arreglo vacio como payload nos valdrá.Bien,para los marcadores vamos a crear una accion sincrona:
+
+type MapAction =
+  | { type: "setMap", payload: Map }
+  | { type: "setMarkers", payload: Marker[] }
+
+    case "setMarkers":
+      return {
+        ...state,
+        markers: action.payload
+      }
+
+ const { places } = useContext(PlacesContext);
+
+  useEffect(() => {
+    state.markers?.forEach((marker) => marker.remove());
+    const newMarkers: Marker[] = [];
+
+    for (const place of places) {
+      const [lng, lat] = place.center;
+      const popup = new Popup().setHTML(`
+        <h6>${place.text_es}</h6>
+        <p class="text-muted" style="font-size: 12px">
+          ${place.place_name_es}
+        </p>
+      `);
+      const newMarker = new Marker()
+        .setPopup(popup)
+        .setLngLat([lng, lat])
+        .addTo(state.map!);
+      newMarkers.push(newMarker);
+    }
+    // limpiar polylines
+    dispatch({type:'setMarkers', payload: newMarkers});
+  }, [state.markers, places, state.map]);
+
+* Fijate que de nuevo uso new Popup().setHTML,new Marker,etc añadiendolo al map.
+
+			VIDEO 227 VOLAR Y ACTIVAR EL LUGAR SELECCIONADO
+
+Queremos que al hacer click en un lugar concreto tras hacer la query naveguemos hacia él,dado que mejora la experiencia de usuario.También queremos activarlo,ponerlo como marcador activo.
+
+Realmente es bastante sencillo,en el list item implemento el evento click pasandole el place,que lo tengo a mano en la iteración.
+ <li 
+   key={place.id} 
+   className="list-group-item list-group-item-action pointer"
+   onClick={() => onPlaceClicked(place)} 
+   >
+Y esa función llamará a map.flyTo():
+ const [activeId, setActiveId] = useState("");
+
+ const onPlaceClicked = (place:Feature) => {
+    const  [lng, lat] = place.center;
+
+    map?.flyTo({
+      center: [lng, lat],
+      zoom: 15,
+    });
+  setActiveId(place.id)
+  }
+Fijate que con un simple estado local  podemos darle un estilo si se hace click en el marcador,y realmente es algo que no es necesario que salga de este componente.Nos faltaría trazar la ruta desde nuestra ubicación hasta la que se hecho click
+
+			VIDEO 228 DIRECTIONS API - TRAZOS ENTRE DOS PUNTOS
+
+Esto realmente es otra feature de esta grandisima libreria de mapas.Puedo ir a documentación y buscar alli por directions:
+https://docs.mapbox.com/playground/directions/
+Puedo ver alli que hay varias opciones(traffic,driving,walking o cycling se refiere a transporte público,coche propio,caminando o en bici,respectivamente)
+Alternatives muestra rutas alternativas y steps da las instrucciones fragmentadas en pasos.
+Usaremos geojson ya que no es necesario desencriptar las coordenadas,aunque sea un poco menos preciso.
+
+NOTA: %3B es un punto y coma,%2C parece que es una coma.Bien,creamos una nueva instancia de axios que apunte al endpoint que nos sugieren con las opciones que queremos:
+
+const directionsApi = axios.create({
+  baseURL: 'https://api.mapbox.com/directions/v5/mapbox/driving',
+  params: {
+    alternatives:false,
+    geometries:"geojson",
+    overview:"simplified",
+    steps:false, 
+    language: 'es',
+    access_token: "pk.ey"
+  }
+})
+
+export default directionsApi;
 
