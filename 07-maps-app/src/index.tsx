@@ -1,6 +1,8 @@
 import ReactDOM from "react-dom";
 import { MapsApp } from "./MapsApp";
-import mapboxgl from "mapbox-gl";
+//@ts-ignore
+// eslint-disable-next-line import/no-webpack-loader-syntax
+import mapboxgl from "!mapbox-gl";
 import "./styles.css";
 
 

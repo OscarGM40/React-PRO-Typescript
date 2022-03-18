@@ -1,5 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 import { useContext, useEffect, useReducer } from "react";
-import { Map, Marker, Popup } from "mapbox-gl";
+//@ts-ignore
+// eslint-disable-next-line import/no-webpack-loader-syntax
+import { AnySourceData, LngLatBounds, Map, Marker, Popup } from "!mapbox-gl";
 
 import { PlacesContext } from "../places/PlacesContext";
 import { MapContext } from "./MapContext";
@@ -76,7 +79,7 @@ export const MapProvider = ({ children }: Children) => {
     const response = await directionsApi.get<DirectionsResponse>(
       `/${start.join(",")};${end.join(",")}`
     );
-    console.log(response.data, "data");
+    // console.log(response.data, "data");
     const { distance, duration, geometry } = response.data.routes[0];
     const { coordinates: coords } = geometry;
 
@@ -85,7 +88,53 @@ export const MapProvider = ({ children }: Children) => {
     kms /= 100;
 
     const minutes = Math.floor(duration / 60);
-    console.log({ kms, minutes });
+    // console.log({ kms, minutes });
+    const bounds = new LngLatBounds(start, start);
+
+    for (const coord of coords) {
+      const newCoord: [number, number] = [coord[0], coord[1]];
+      bounds.extend(newCoord);
+    }
+    /* debo dejar un pequeño padding */
+    state.map?.fitBounds(bounds, { padding: 200 });
+
+    /* esto es como luce una polyline(falta agregarla) */
+    const sourceData: AnySourceData = {
+      type: "geojson",
+      data: {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "LineString",
+              coordinates: coords,
+            },
+          },
+        ],
+      },
+    };
+    /* solo puedo tener una polyline,hay que borrar la anterior Para ello hay que borrar tanto la layer como el source de datos */
+    if (state.map?.getLayer("RouteString")) {
+      state.map?.removeLayer("RouteString");
+      state.map?.removeSource("RouteString");
+    }
+    state.map?.addSource("RouteString", sourceData);
+    state.map?.addLayer({
+      id: "RouteString",
+      type: "line",
+      source: "RouteString",
+      layout: {
+        "line-join": "round",
+        "line-cap": "round",
+      },
+      paint: {
+        "line-color": "#61dafb",
+        "line-width": 4,
+      },
+    });
+
     return response.data;
   };
 

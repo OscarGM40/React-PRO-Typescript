@@ -1,30 +1,31 @@
-import { Map } from "mapbox-gl";
+//@ts-ignore
+// eslint-disable-next-line import/no-webpack-loader-syntax
+import { Map } from "!mapbox-gl";
 import { useContext, useLayoutEffect, useRef } from "react";
 import { MapContext, PlacesContext } from "../context";
 import { Loading } from "./Loading";
 
 export const MapView = () => {
-
-  const { isLoading,userLocation } = useContext(PlacesContext);
+  const { isLoading, userLocation } = useContext(PlacesContext);
   const { setMap } = useContext(MapContext);
   const mapDiv = useRef<HTMLDivElement>(null);
 
   useLayoutEffect(() => {
     if (!isLoading) {
-     const map = new Map({
-       container: mapDiv?.current!,
-       // style: 'mapbox://styles/mapbox/streets-v11',
-      //  style: "mapbox://styles/mapbox/light-v10",
-       // style: 'mapbox://styles/mapbox/satellite-streets-v10',
-       style: 'mapbox://styles/mapbox/dark-v10',
-       center: [userLocation![1], userLocation![0]],
-       zoom: 11,
-     });
+      const map = new Map({
+        container: mapDiv?.current!,
+        // style: 'mapbox://styles/mapbox/streets-v11',
+        //  style: "mapbox://styles/mapbox/light-v10",
+        // style: 'mapbox://styles/mapbox/satellite-streets-v10',
+        style: "mapbox://styles/mapbox/dark-v10",
+        center: [userLocation![1], userLocation![0]],
+        zoom: 11,
+      });
       setMap(map);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLoading]);
-  
+
   if (isLoading) {
     return <Loading />;
   }
@@ -39,7 +40,6 @@ export const MapView = () => {
         top: 0,
         left: 0,
       }}
-    >
-    </div>
+    ></div>
   );
 };

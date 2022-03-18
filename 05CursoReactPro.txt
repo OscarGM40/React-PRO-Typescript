@@ -882,3 +882,70 @@ const directionsApi = axios.create({
 
 export default directionsApi;
 
+			VIDEO 230 MOSTRAR LA POLYLINE EN EL MAPA 
+
+Para mostrar la polyline es seguir la documentación,son varios pasos:
+  const bounds = new LngLatBounds(start, start);
+
+    for (const coord of coords) {
+      const newCoord: [number, number] = [coord[0], coord[1]];
+      bounds.extend(newCoord);
+    }
+    /* debo dejar un pequeño padding */
+    state.map?.fitBounds(bounds, { padding: 200 });
+
+    /* esto es como luce una polyline(falta agregarla) */
+    const sourceData: AnySourceData = {
+      type: "geojson",
+      data: {
+        type: "FeatureCollection",
+        features: [
+          {
+            type: "Feature",
+            properties: {},
+            geometry: {
+              type: "LineString",
+              coordinates: coords,
+            },
+          },
+        ],
+      },
+    };
+    /* solo puedo tener una polyline,hay que borrar la anterior Para ello hay que borrar tanto la layer como el source de datos */
+    if (state.map?.getLayer("RouteString")) {
+      state.map?.removeLayer("RouteString");
+      state.map?.removeSource("RouteString");
+    }
+    state.map?.addSource("RouteString", sourceData);
+    state.map?.addLayer({
+      id: "RouteString",
+      type: "line",
+      source: "RouteString",
+      layout: {
+        "line-join": "round",
+        "line-cap": "round",
+      },
+      paint: {
+        "line-color": "#61dafb",
+        "line-width": 4,
+      },
+    });	
+
+			VIDEO 231 DESPLEGAR LA APLICACIÓN
+
+Mapbox tiene un pequeño problema con Babel,al hacer el build y desplegarlo veré que Babel transpilará mal.La solución es indicar a Babel que no transpile la libreria entera,hay varias formas de hacerlo(lo tengo en la documentación).
+
+Dado que estamos con create-react-app no puedo acceder al webpack.config pero si que puedo usar esto:
+import mapbox from '!mapbox-gl'; 
+Puedo interpretar ese ! como 'babel,no transpiles esta libreria'.Es muy poco común,pero es justo lo que quiero.(investigar sobre la arroba)
+	
+Sin embargo esto dará otro error ya que typescript confunde completamente el nombre y piensa que es otra libreria diferente y no encuentra los type definitions.
+En este punto lo mejor es ignorar los errores:
+//@ts-ignore
+// eslint-disable-next-line import/no-webpack-loader-syntax
+import mapboxgl from "!mapbox-gl";
+Hacer lo mismo para todo el proyecto.Bien,pudiera parecer que es suficiente,pero no voy a poder hacer el build,dado que esta sintaxis(la !) no está permitida.
+
+Yo lo solucioné con la segunda linea.Fernando usó /* eslint import/no-wepack-loader-syntax:off */
+Ya con esto si que funcionará la aplicación,dado que Babel ignorará a mapbox.
+
