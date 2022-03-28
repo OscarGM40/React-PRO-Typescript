@@ -325,6 +325,7 @@ AllCaps.args = {
 			VIDEO 161 DOCUMENTAR AUTOMÁTICAMENTE LAS DESCRIPCIONES
 
 Todavia faltaría crear un documentación.Ya hemos visto como se hacia.Fijate que una buena documentación será fundamental.
+NOTA: la documentación va en la interface que tipa el componente
 
 IMPORTANTE: para storybook un comentario es insignificante asi que no va a re-buildear todo.Para ver los cambios tendré que cambiar algo del código o reiniciar el server.
 
@@ -360,7 +361,7 @@ Tertiary.args = {
   size: 'normal',
   color: 'tertiary'
 }
-
+* En el componente
 const MyLabel = ({
   label = "No Label",
   size = "normal",
@@ -380,9 +381,9 @@ Storybook trata de hacer lo mejor posible,si el campo es un boleano pone un sele
 
 				VIDEO 163 NUEVA PROPIEDAD - COLOR DE FUENTE
 
-Es una tarea en la que meter un <input type="color">.Realmente es muy sencillo,simplemente le paso ese argTypes:
+Es una tarea en la que meter un <input type="color">.Realmente es muy sencillo,simplemente le paso el control de tipo color en los argTypes:
 
-  fontColor: { control: 'color' }
+fontColor: { control: 'color' }
 Y la nueva página será un h1
 export const CustomFontColor = Template.bind({});
 Tertiary.args = {
@@ -400,7 +401,7 @@ Digamos que ya tengo listo el componente y lo quiero subir a la Cloud.También v
 
 						PASOS A SEGUIR
 
-UNO: hacer el build(comando build-storybook).Esto crea la carpeta storybook-static.Esta es la carpeta importante.
+UNO: hacer el build(comando build-storybook).Esto crea la carpeta storybook/static con un index.html a servir.Esta es la carpeta importante.
 Puedo hacer una prueba con la libreria http-server(npm i -g http-server)
 live-server storybook-static --port=3000(usaré live-server)
 
@@ -572,7 +573,7 @@ NOTA: recuerda que un secret en GH va a ir encriptado(igual que en cualquier otr
 
 					VIDEO 177 GITHUB ACTIONS
 
-GitHubAction es una tool poderosísima para realizar una gran cantidad de tareas automáticas.Vamos a Actions en el repo y creamos una desde scratch.
+GitHub Action es una tool poderosísima para realizar una gran cantidad de tareas automáticas.Vamos a Actions en el repo y creamos una desde scratch.
 La dejamos como main.yml.Fernando provee un gist al yaml:
 https://github.com/Klerith/sb-components/blob/main/.github/workflows/main.yml
 

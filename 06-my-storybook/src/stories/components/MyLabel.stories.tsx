@@ -25,9 +25,8 @@ export default {
 } as ComponentMeta<typeof MyLabel>;
 
 //👇 Creo una Template del componente
-const Template: ComponentStory<typeof MyLabel> = (args) => (
-  <MyLabel {...args} />
-);
+const Template: ComponentStory<typeof MyLabel> = (args) => (<MyLabel {...args} />);
+
 
 export const Basic = Template.bind({});
 Basic.args = {
